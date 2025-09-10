@@ -8,9 +8,10 @@ public class Socketry {
     HashMap<String, Function<byte[], byte[]>> procedures;
     String[] procedureNames;
 
+    String[] remoteProcedureNames;
 
     byte[] getProcedures() {
-        return null;
+        return null; // TODO
     }
 
     public Socketry(byte[] socketsPerChannel,
@@ -37,5 +38,28 @@ public class Socketry {
         }
 
         return procedure.apply(data);
+    }
+
+    public byte[] makeRemoteCall(String name, byte[] data, int channelId) {
+        int fnId = -1;
+        for (int i = 0; i < remoteProcedureNames.length; i++) {
+            if (remoteProcedureNames[i].equals(name)) {
+                fnId = i;
+                break;
+            }
+        }
+        if (fnId == -1) {
+            throw new IllegalArgumentException("Unknown procedure: " + name);
+        }
+
+        if (channelId < 0 || channelId >= socketsPerChannel.length) {
+            throw new IllegalArgumentException("Invalid channelId: " + channelId);
+        }
+
+        if (socketsPerChannel[channelId] == 0) {
+            throw new IllegalArgumentException("No sockets available for channel: " + channelId);
+        }
+
+        return null; // TODO send fnId, channelId and data to socket
     }
 }

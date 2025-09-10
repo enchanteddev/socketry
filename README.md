@@ -5,12 +5,12 @@ Actions (1 Byte): CALL, RESULT, ERROR, INIT, ACCEPT, PING, PONG
 ## Call
 - FnID (Int) (1 Byte) max limit is 256 functions
 - CallId (Int) (1 Byte) max limit is 256 calls in transit
-- Arguments (n Bytes) JSON
+- Arguments (n Bytes) Arbitrary bytes
 
 ## Result
 - FnID (Int) (1 Byte) max limit is 256 functions
 - CallId (Int) (1 Byte) max limit is 256 calls in transit
-- Response (n Bytes) JSON
+- Response (n Bytes) Arbitrary bytes
 
 ## Error
 - FnID (Int) (1 Byte) max limit is 256 functions
