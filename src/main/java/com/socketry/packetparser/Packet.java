@@ -1,5 +1,6 @@
 package com.socketry.packetparser;
 
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 
@@ -36,6 +37,44 @@ public sealed interface Packet permits Packet.Call, Packet.Result, Packet.Error,
             default:
                 throw new IllegalArgumentException("Unknown packet type: " + type);
         }
+    }
+    
+    static ByteBuffer serialize(Packet packet) {
+        ByteBuffer buffer = ByteBuffer.allocate(1024);
+        switch (packet) {
+            case Packet.Call call:
+                buffer.put((byte)0x01);
+                buffer.put(call.fnId());
+                buffer.put(call.callId());
+                buffer.put(call.arguments());
+                break;
+            case Packet.Result result:
+                buffer.put((byte)0x02);
+                buffer.put(result.fnId());
+                buffer.put(result.callId());
+                buffer.put(result.response());
+                break;
+            case Packet.Error error:
+                buffer.put((byte)0x03);
+                buffer.put(error.fnId());
+                buffer.put(error.callId());
+                buffer.put(error.error());
+                break;
+            case Packet.Init init:
+                buffer.put((byte)0x04);
+                buffer.put(init.channels());
+                break;
+            case Packet.Accept accept:
+                buffer.put((byte)0x05);
+                break;
+            case Packet.Ping ping:
+                buffer.put((byte)0x06);
+                break;
+            case Packet.Pong pong:
+                buffer.put((byte)0x07);
+                break;
+        }
+        return buffer;
     }
 
 
