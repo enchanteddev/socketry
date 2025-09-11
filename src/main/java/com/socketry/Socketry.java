@@ -13,15 +13,16 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
 
-public class Socketry {
+/**
+ * Just provides the required methods
+ */
+public abstract class Socketry {
     HashMap<String, Function<byte[], byte[]>> procedures;
     String[] procedureNames;
     String[] remoteProcedureNames;
 
     Tunnel[] tunnels;
     Link[] links;
-
-    private Selector selector;
 
     byte[] getProcedures() {
         return null; // TODO use JSON here
@@ -44,7 +45,7 @@ public class Socketry {
     }
 
     public void startListening() throws IOException {
-        selector = Selector.open();
+        Selector selector = Selector.open();
 
         for (Link link : links) {
             link.register(selector);
