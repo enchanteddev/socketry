@@ -23,6 +23,7 @@ public abstract class Socketry {
 
     Tunnel[] tunnels;
     Link[] links;
+    HashMap<Link, Tunnel> linkToTunnel;
 
     byte[] getProcedures() {
         return null; // TODO use JSON here
@@ -52,7 +53,7 @@ public abstract class Socketry {
         }
 
         while (true) {
-            ArrayList<CompletableFuture<ArrayList<Packet>>> packetFutures = new ArrayList<>();
+            HashMap<Tunnel,ArrayList<CompletableFuture<ArrayList<Packet>>>> packetFutures = new HashMap();
             try {
                 // Block until at least one channel is ready with some data to read
                 int readyChannels = selector.select(1000); // 1 second timeout
@@ -62,14 +63,18 @@ public abstract class Socketry {
                 }
 
                 Set<SelectionKey> selectedKeys = selector.selectedKeys();
-                Iterator<SelectionKey> keyIterator = selectedKeys.iterator();
 
-                while (keyIterator.hasNext()) {
-                    SelectionKey key = keyIterator.next();
-
+                for (SelectionKey key : selectedKeys) {
                     if (key.isReadable()) {
                         Link link = (Link) key.attachment();
-                        packetFutures.add(link.getPackets());
+                        Tunnel tunnel = linkToTunnel.get(link);
+                        if (tunnel == null) {
+                            System.err.println("Error: tunnel not found for link");
+                            continue;
+                        }
+                        ArrayList<CompletableFuture<ArrayList<Packet>>> packetFuturesForTunnel =
+                            packetFutures.computeIfAbsent(tunnel, k -> new ArrayList<>());
+                        packetFuturesForTunnel.add(link.getPackets());
                     }
                 }
             } catch (IOException e) {
@@ -77,17 +82,15 @@ public abstract class Socketry {
                 e.printStackTrace();
             }
 
-            CompletableFuture.allOf(packetFutures.toArray(new CompletableFuture[0])).join();
-            ArrayList<Packet> packets = new ArrayList<>();
-            for (CompletableFuture<ArrayList<Packet>> packetFuture : packetFutures) {
-                packets.addAll(packetFuture.join());
-            }
-        }
-    }
+            CompletableFuture.allOf(packetFutures.values().toArray(new CompletableFuture[0])).join();
+            packetFutures.forEach((tunnel, tunnelPackets) -> {
+                tunnelPackets.forEach(packetFuture -> {
+                    ArrayList<Packet> packetsForTunnel = packetFuture.join();
+                    packetsForTunnel.forEach(tunnel::feedPacket);
+                });
+            });
 
-    byte[] handleData(byte[] data) {
-        // TODO: parse the packet and call the function or respond to the checks
-        return new byte[0];
+        }
     }
 
     byte[] handleRemoteCall(byte fnId, byte[] data) {
@@ -99,7 +102,7 @@ public abstract class Socketry {
         return procedure.apply(data);
     }
 
-    public byte[] makeRemoteCall(String name, byte[] data, int tunnelId) {
+    public CompletableFuture<byte[]> makeRemoteCall(String name, byte[] data, int tunnelId) {
         byte fnId = -1;
         for (byte i = 0; i < remoteProcedureNames.length; i++) {
             if (remoteProcedureNames[i].equals(name)) {
@@ -119,9 +122,7 @@ public abstract class Socketry {
         Tunnel tnl = tunnels[tunnelId];
         int linkId = tnl.selectLink();
         Link link = links[linkId];
-        tnl.callFn(fnId, data, link); // TODO handle await and then wait for response
-
-        return null; // TODO send fnId, channelId and data to socket
+        return tnl.callFn(fnId, data, link);
     }
 }
 

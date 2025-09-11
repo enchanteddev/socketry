@@ -20,19 +20,19 @@ public sealed interface Packet permits Packet.Call, Packet.Result, Packet.Error,
     static Packet parse(byte[] data) {
         byte type = data[0];
         switch (type) {
-            case 0x01:
+            case PacketType.CALL:
                 return Call.parse(data);
-            case 0x02:
+            case PacketType.RESULT:
                 return Result.parse(data);
-            case 0x03:
+            case PacketType.ERROR:
                 return Error.parse(data);
-            case 0x04:
+            case PacketType.INIT:
                 return new Init(Arrays.copyOfRange(data, 1, data.length));
-            case 0x05:
+            case PacketType.ACCEPT:
                 return Accept.INSTANCE;
-            case 0x06:
+            case PacketType.PING:
                 return Ping.INSTANCE;
-            case 0x07:
+            case PacketType.PONG:
                 return Pong.INSTANCE;
             default:
                 throw new IllegalArgumentException("Unknown packet type: " + type);
@@ -43,35 +43,35 @@ public sealed interface Packet permits Packet.Call, Packet.Result, Packet.Error,
         ByteBuffer buffer = ByteBuffer.allocate(1024);
         switch (packet) {
             case Packet.Call call:
-                buffer.put((byte)0x01);
+                buffer.put(PacketType.INIT);
                 buffer.put(call.fnId());
                 buffer.put(call.callId());
                 buffer.put(call.arguments());
                 break;
             case Packet.Result result:
-                buffer.put((byte)0x02);
+                buffer.put(PacketType.RESULT);
                 buffer.put(result.fnId());
                 buffer.put(result.callId());
                 buffer.put(result.response());
                 break;
             case Packet.Error error:
-                buffer.put((byte)0x03);
+                buffer.put(PacketType.ERROR);
                 buffer.put(error.fnId());
                 buffer.put(error.callId());
                 buffer.put(error.error());
                 break;
             case Packet.Init init:
-                buffer.put((byte)0x04);
+                buffer.put(PacketType.INIT);
                 buffer.put(init.channels());
                 break;
             case Packet.Accept accept:
-                buffer.put((byte)0x05);
+                buffer.put(PacketType.ACCEPT);
                 break;
             case Packet.Ping ping:
-                buffer.put((byte)0x06);
+                buffer.put(PacketType.PING);
                 break;
             case Packet.Pong pong:
-                buffer.put((byte)0x07);
+                buffer.put(PacketType.PONG);
                 break;
         }
         return buffer;

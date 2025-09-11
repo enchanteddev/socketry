@@ -4,6 +4,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
+import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
@@ -13,9 +15,8 @@ import java.util.concurrent.CompletableFuture;
 import com.socketry.packetparser.Packet;
 
 public class Link {
-    public static int ALL_PACKETS = -1;
-    private SocketChannel clientChannel;
-    private ByteBuffer buffer;
+    private final SocketChannel clientChannel;
+    private final ByteBuffer buffer;
 
     private SocketPacket currentSocketPacket;
 
@@ -44,8 +45,10 @@ public class Link {
         clientChannel.configureBlocking(to_block);
     }
 
-    public void register(Selector selector) {
-
+    public void register(Selector selector) throws ClosedChannelException {
+        if (clientChannel != null) {
+            clientChannel.register(selector, SelectionKey.OP_READ, this);
+        }
     }
 
     /**
@@ -63,7 +66,6 @@ public class Link {
         buffer.clear();
         return clientChannel.read(buffer);
     }
-
 
     /**
      * reads and returns packets received
@@ -117,8 +119,6 @@ public class Link {
         while (currDatapos < len) {
             if (currentSocketPacket == null) {
                 // expecting a `Packet`
-                // TODO: fix this code to parse the SocketPacket
-                int header = readInt(data, currDatapos);
                 int contentLength = readInt(data, currDatapos);
                 currentSocketPacket = new SocketPacket(contentLength, new ByteArrayOutputStream());
             }
@@ -149,12 +149,14 @@ public class Link {
 
     public CompletableFuture<Boolean> sendPacket(Packet packet) {
         return CompletableFuture.supplyAsync(() -> {
-            byte[] data = null;
-            SocketPacket spacket = SocketPacket.fromPacket(packet);
-            if (spacket != null) {
-                data = spacket.content.toByteArray();
-            }
-            if (clientChannel != null && data != null) {
+            byte[] packetData = Packet.serialize(packet).array();
+
+            ByteBuffer socketData = ByteBuffer.allocate(1024);
+            socketData.putInt(packetData.length);
+            socketData.put(packetData);
+            byte[] data = socketData.array();
+
+            if (clientChannel != null) {
                 try {
                     clientChannel.write(ByteBuffer.wrap(data));
                     return true;
@@ -175,9 +177,5 @@ class SocketPacket {
     public SocketPacket(int contentLength, ByteArrayOutputStream content) {
         this.contentLength = contentLength;
         this.content = content;
-    }
-
-    public static SocketPacket fromPacket(Packet packet) {
-        return null;
     }
 }

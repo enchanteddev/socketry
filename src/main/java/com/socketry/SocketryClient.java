@@ -22,6 +22,8 @@ public class SocketryClient extends Socketry {
             throw new IllegalStateException("Expected accept packet");
         }
 
+        // TODO : get the ports
+
         this.setProcedures(_procedures);
     }
 }
