@@ -3,14 +3,11 @@ package com.socketry;
 import com.socketry.packetparser.Packet;
 
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.net.InetSocketAddress;
-import java.net.Socket;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 
@@ -38,12 +35,13 @@ public class SocketryServer extends Socketry {
         SocketChannel clientInitChannel = initServer.accept();
         
         // block to complete the handshake
-        clientInitChannel.configureBlocking(true);
         Link link = new Link(clientInitChannel);
+        link.configureBlocking(true);
 
         Packet initPacket = link.getPacket();
+
         if (!(initPacket instanceof Packet.Init)) {
-            throw new IllegalStateException("Expected Init packet");
+            throw new IllegalStateException("Expected Init packet" + initPacket);
         }
 
         byte[] socketsPerTunnel = ((Packet.Init) initPacket).channels();

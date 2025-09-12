@@ -32,12 +32,14 @@ public class Link {
         clientChannel.connect(new InetSocketAddress(_port));
         clientChannel.configureBlocking(false);
         buffer = ByteBuffer.allocate(1024);
+        packets = new java.util.concurrent.ConcurrentLinkedQueue<>();
     }
 
     public Link(SocketChannel _connectedChannel) throws IOException {
         clientChannel = _connectedChannel;
         clientChannel.configureBlocking(false);
         buffer = ByteBuffer.allocate(1024);
+        packets = new java.util.concurrent.ConcurrentLinkedQueue<>();
     }
 
     public void configureBlocking(boolean to_block) throws IOException {
@@ -106,6 +108,7 @@ public class Link {
 
     public void readNParsePackets() throws IOException {
         int dataRead = readData();
+        System.out.println("Read " + dataRead + " bytes");
         if (dataRead <= 0) { // no data to parse
             return;
         }
@@ -148,12 +151,13 @@ public class Link {
 
         ByteBuffer socketData = ByteBuffer.allocate(1024);
         socketData.putInt(packetData.length);
+        System.out.println("Sending " + packetData.length + " bytes");
         socketData.put(packetData);
-        byte[] data = socketData.array();
+        socketData.flip();
 
         if (clientChannel != null) {
             try {
-                clientChannel.write(ByteBuffer.wrap(data));
+                clientChannel.write(socketData);
                 return true;
             } catch (IOException e) {
                 System.out.println("Error while writing" + e.getMessage());

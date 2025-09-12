@@ -4,7 +4,7 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.function.Function;
 
-class DummyClass {
+class DummyClass2 {
     byte[] hello(byte[] args) {
         return "Hello, World!".getBytes();
     }
@@ -19,10 +19,11 @@ public class SocketryExampleServer {
     public static void main(String[] args) throws Exception {
         HashMap<String, Function<byte[], byte[]>> procedures = new HashMap<>();
 
-        DummyClass dummy = new DummyClass();
+        DummyClass2 dummy = new DummyClass2();
         procedures.put("hello", dummy::hello);
 
         SocketryServer server = new SocketryServer(60000, procedures);
+        System.out.println("Server started");
 
         Thread handler = new Thread(server::listenLoop);
         handler.start();

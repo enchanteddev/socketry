@@ -30,6 +30,7 @@ public class SocketryExampleClient {
         procedures.put("add", dummy::addWrapper);
         
         SocketryClient client = new SocketryClient(new byte[] {1, 1, 1}, 60000, procedures);
+        System.out.println("Client started");
         
         Thread handler = new Thread(client::listenLoop);
         handler.start();

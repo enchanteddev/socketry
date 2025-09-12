@@ -31,7 +31,7 @@ public class Tunnel {
     private void initialize() throws IOException {
         this.selector = Selector.open();
         this.packets = Collections.synchronizedMap(new HashMap<>());
-        // TODO: init the queue
+        this.packetQueue = new java.util.concurrent.ConcurrentLinkedQueue<>();
     }
 
     /**

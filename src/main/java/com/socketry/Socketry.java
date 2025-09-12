@@ -4,11 +4,8 @@ import com.socketry.packetparser.Packet;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
@@ -30,6 +27,7 @@ public abstract class Socketry {
             buffer.put(procedureName.getBytes());
             buffer.put((byte) 0);
         }
+        buffer.flip();
         return buffer.array();
     }
 
@@ -74,8 +72,6 @@ public abstract class Socketry {
     }
 
     private void startListening() throws IOException {
-        Selector selector = Selector.open();
-
         while (true) {
             // listen to each tunnel
             // since each are configured in non-blocking mode

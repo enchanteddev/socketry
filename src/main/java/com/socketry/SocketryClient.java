@@ -16,11 +16,13 @@ public class SocketryClient extends Socketry {
         this.setProcedures(_procedures);
 
         Link link = new Link(serverPort);
+        link.configureBlocking(true);
 
         Packet initPacket = new Packet.Init(socketsPerTunnel);
         link.sendPacket(initPacket);
 
         Packet acceptPacket = link.getPacket();
+
         if (!(acceptPacket instanceof Packet.Accept)) {
             throw new IllegalStateException("Expected accept packet");
         }

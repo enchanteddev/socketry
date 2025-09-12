@@ -40,10 +40,18 @@ public sealed interface Packet permits Packet.Call, Packet.Result, Packet.Error,
     }
     
     static ByteBuffer serialize(Packet packet) {
-        ByteBuffer buffer = ByteBuffer.allocate(1024);
+        ByteBuffer buffer = ByteBuffer.allocate(1 + switch (packet) {
+            case Packet.Call call -> 2 + call.arguments().length;
+            case Packet.Result result -> 2 + result.response().length;
+            case Packet.Error error -> 2 + error.error().length;
+            case Packet.Init init -> init.channels().length;
+            case Packet.Accept accept -> 2 * accept.ports().length;
+            case Packet.Ping ping -> 0;
+            case Packet.Pong pong -> 0;
+        });
         switch (packet) {
             case Packet.Call call:
-                buffer.put(PacketType.INIT);
+                buffer.put(PacketType.CALL);
                 buffer.put(call.fnId());
                 buffer.put(call.callId());
                 buffer.put(call.arguments());
@@ -66,6 +74,9 @@ public sealed interface Packet permits Packet.Call, Packet.Result, Packet.Error,
                 break;
             case Packet.Accept accept:
                 buffer.put(PacketType.ACCEPT);
+                for (short port : accept.ports()) {
+                    buffer.putShort(port); // BIG ENDIAN
+                }
                 break;
             case Packet.Ping ping:
                 buffer.put(PacketType.PING);
@@ -106,7 +117,7 @@ public sealed interface Packet permits Packet.Call, Packet.Result, Packet.Error,
             // maybe a faster 0copy method exists, but i digress.
             short[] ports = new short[(data.length - 1) / 2]; // assume length is odd (even + 1 for type byte)
             for (int i = 1; i < data.length; i += 2) {
-                ports[i / 2] = (short) ((data[i] << 8) | data[i + 1]);
+                ports[i / 2] = (short) ((data[i] << 8) | data[i + 1]); // BIG ENDIAN
             }
             return new Accept(ports);
         }
