@@ -64,8 +64,17 @@ public class Link {
             // TODO : try to re-connect first
             throw new RuntimeException("Disconnected or never connected : ");
         }
+        byte[] leftOverData = buffer.array();
+        // only take in so that
+        ByteBuffer readBuffer = ByteBuffer.allocate(1024 - leftOverData.length);
+        int dataRead = clientChannel.read(readBuffer);
         buffer.clear();
-        return clientChannel.read(buffer);
+        buffer.put(leftOverData);
+        if (dataRead > 0) {
+            buffer.put(readBuffer);
+        }
+        buffer.flip();
+        return dataRead;
     }
 
     /**
