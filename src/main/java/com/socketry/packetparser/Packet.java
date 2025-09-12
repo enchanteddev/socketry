@@ -29,7 +29,7 @@ public sealed interface Packet permits Packet.Call, Packet.Result, Packet.Error,
             case PacketType.INIT:
                 return new Init(Arrays.copyOfRange(data, 1, data.length));
             case PacketType.ACCEPT:
-                return Accept.INSTANCE;
+                return Accept.parse(data);
             case PacketType.PING:
                 return Ping.INSTANCE;
             case PacketType.PONG:
@@ -101,10 +101,15 @@ public sealed interface Packet permits Packet.Call, Packet.Result, Packet.Error,
 
     record Init(byte[] channels) implements Packet {}
 
-    // TODO : change the Accept packet to return port Number
-    final class Accept implements Packet {
-        public static final Accept INSTANCE = new Accept();
-        private Accept() {}
+    record Accept(short[] ports) implements Packet {
+        static Accept parse(byte[] data) {
+            // maybe a faster 0copy method exists, but i digress.
+            short[] ports = new short[(data.length - 1) / 2]; // assume length is odd (even + 1 for type byte)
+            for (int i = 1; i < data.length; i += 2) {
+                ports[i / 2] = (short) ((data[i] << 8) | data[i + 1]);
+            }
+            return new Accept(ports);
+        }
     }
 
     final class Ping implements Packet {

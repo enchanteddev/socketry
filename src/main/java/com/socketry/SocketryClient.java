@@ -1,6 +1,7 @@
 package com.socketry;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
@@ -8,22 +9,42 @@ import java.util.function.Function;
 import com.socketry.packetparser.Packet;
 
 public class SocketryClient extends Socketry {
-    public SocketryClient(byte[] socketsPerChannel, int server_port,
+    public SocketryClient(byte[] socketsPerTunnel, int serverPort,
             HashMap<String, Function<byte[], byte[]>> _procedures)
             throws IOException, InterruptedException, ExecutionException {
-        
-        Link link = new Link(server_port);
 
-        Packet initPacket = new Packet.Init(socketsPerChannel);
+        this.setProcedures(_procedures);
+
+        Link link = new Link(serverPort);
+
+        Packet initPacket = new Packet.Init(socketsPerTunnel);
         link.sendPacket(initPacket);
-        
+
         Packet acceptPacket = link.getPacket();
         if (!(acceptPacket instanceof Packet.Accept)) {
             throw new IllegalStateException("Expected accept packet");
         }
 
-        // TODO : get the ports
+        short[] ports = ((Packet.Accept) acceptPacket).ports();
 
-        this.setProcedures(_procedures);
+        this.setTunnelsFromPorts(ports, socketsPerTunnel);
+        this.getRemoteProcedureNames();
+    }
+
+    public void setTunnelsFromPorts(short[] ports, byte[] socketsPerTunnel) {
+        ArrayList<Tunnel> tunnels = new ArrayList<>();
+
+        byte lastSocketNum = 0;
+        for (byte socketsNum : socketsPerTunnel) {
+            ArrayList<Integer> portsForTunnel = new ArrayList<>();
+            for (int i = lastSocketNum; i < lastSocketNum + socketsNum; i++) {
+                portsForTunnel.add((int) ports[i]);
+            }
+            lastSocketNum += socketsNum;
+            Tunnel tunnel = new Tunnel(portsForTunnel);
+            tunnels.add(tunnel);
+        }
+
+        this.tunnels = tunnels.toArray(new Tunnel[0]);
     }
 }

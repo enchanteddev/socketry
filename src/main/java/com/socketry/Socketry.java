@@ -3,12 +3,14 @@ package com.socketry;
 import com.socketry.packetparser.Packet;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 
 
@@ -25,7 +27,12 @@ public abstract class Socketry {
     HashMap<Link, Tunnel> linkToTunnel;
 
     byte[] getProcedures() {
-        return null; // TODO use JSON here
+        ByteBuffer buffer = ByteBuffer.allocate(1024);
+        for (String procedureName : procedureNames) {
+            buffer.put(procedureName.getBytes());
+            buffer.put((byte) 0);
+        }
+        return buffer.array();
     }
 
     public void setProcedures(
@@ -44,7 +51,31 @@ public abstract class Socketry {
         }
     }
 
-    public void startListening() throws IOException {
+    public void getRemoteProcedureNames() throws IOException, InterruptedException, ExecutionException {
+        byte[] initResponse = makeRemoteCall((byte) 0, new byte[0], 0).get();
+
+        ArrayList<String> remoteProcedureNamesList = new ArrayList<>();
+        StringBuilder currentName = new StringBuilder();
+        for (byte b : initResponse) {
+            if (b == 0) {
+                remoteProcedureNamesList.add(currentName.toString());
+                currentName = new StringBuilder();
+            } else {
+                currentName.append((char) b);
+            }
+        }
+        remoteProcedureNames = remoteProcedureNamesList.toArray(new String[0]);
+    }
+
+    public void listenLoop() {
+        try {
+            startListening();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void startListening() throws IOException {
         Selector selector = Selector.open();
 
         for (Link link : links) {
@@ -101,18 +132,16 @@ public abstract class Socketry {
         return procedure.apply(data);
     }
 
-    public CompletableFuture<byte[]> makeRemoteCall(String name, byte[] data, int tunnelId) {
-        byte fnId = -1;
+    public byte getRemoteProcedureId(String name) {
         for (byte i = 0; i < remoteProcedureNames.length; i++) {
             if (remoteProcedureNames[i].equals(name)) {
-                fnId = i;
-                break;
+                return i;
             }
         }
-        if (fnId == -1) {
-            throw new IllegalArgumentException("Unknown procedure: " + name);
-        }
+        throw new IllegalArgumentException("Unknown procedure: " + name);
+    }
 
+    public CompletableFuture<byte[]> makeRemoteCall(byte fnId, byte[] data, int tunnelId) {
         if (tunnelId < 0 || tunnelId >= tunnels.length) {
             throw new IllegalArgumentException("Invalid channelId: " + tunnelId);
         }
