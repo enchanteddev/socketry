@@ -36,13 +36,17 @@ public class SocketryClient extends Socketry {
 
         byte lastSocketNum = 0;
         for (byte socketsNum : socketsPerTunnel) {
-            ArrayList<Integer> portsForTunnel = new ArrayList<>();
+            ArrayList<Short> portsForTunnel = new ArrayList<>();
             for (int i = lastSocketNum; i < lastSocketNum + socketsNum; i++) {
-                portsForTunnel.add((int) ports[i]);
+                portsForTunnel.add((short) ports[i]);
             }
             lastSocketNum += socketsNum;
-            Tunnel tunnel = new Tunnel(portsForTunnel);
-            tunnels.add(tunnel);
+            try {
+                Tunnel tunnel = new Tunnel(portsForTunnel.toArray(new Short[0]));
+                tunnels.add(tunnel);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
 
         this.tunnels = tunnels.toArray(new Tunnel[0]);

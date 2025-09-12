@@ -97,8 +97,12 @@ public class SocketryServer extends Socketry {
                 socketsForTunnel.add(sockets[i]);
             }
             lastSocketNum += socketsNum;
-            Tunnel tunnel = new Tunnel(socketsForTunnel); // TODO Update constructor
-            tunnels.add(tunnel);
+            try {
+                Tunnel tunnel = new Tunnel(socketsForTunnel.toArray(new SocketChannel[0]));
+                tunnels.add(tunnel);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
 
         this.tunnels = tunnels.toArray(new Tunnel[0]);
