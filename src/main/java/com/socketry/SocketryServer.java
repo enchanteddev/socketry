@@ -10,7 +10,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 public class SocketryServer extends Socketry {
-    private static final int LINK_PORT_START =60000;
+    private static final int LINK_PORT_START = 60000;
 
     /**
      * Opens a server and wait for client to connect
@@ -30,7 +30,7 @@ public class SocketryServer extends Socketry {
         clientInitChannel.configureBlocking(true);
         Link link = new Link(clientInitChannel);
 
-        Packet initPacket = link.getPacket().get();
+        Packet initPacket = link.getPacket();
         if (!(initPacket instanceof Packet.Init)) {
             throw new IllegalStateException("Expected Init packet");
         }
@@ -39,7 +39,7 @@ public class SocketryServer extends Socketry {
         // this.setProcedures(procedures);
 
         Packet acceptPacket = Packet.Accept.INSTANCE;
-        link.sendPacket(acceptPacket).get();
+        link.sendPacket(acceptPacket);
 
     }
 

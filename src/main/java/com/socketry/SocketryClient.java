@@ -15,9 +15,9 @@ public class SocketryClient extends Socketry {
         Link link = new Link(server_port);
 
         Packet initPacket = new Packet.Init(socketsPerChannel);
-        link.sendPacket(initPacket).get();
+        link.sendPacket(initPacket);
         
-        Packet acceptPacket = link.getPacket().get();
+        Packet acceptPacket = link.getPacket();
         if (!(acceptPacket instanceof Packet.Accept)) {
             throw new IllegalStateException("Expected accept packet");
         }

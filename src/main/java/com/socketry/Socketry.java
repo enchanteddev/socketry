@@ -7,7 +7,6 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
@@ -53,7 +52,7 @@ public abstract class Socketry {
         }
 
         while (true) {
-            HashMap<Tunnel,ArrayList<CompletableFuture<ArrayList<Packet>>>> packetFutures = new HashMap();
+            HashMap<Tunnel, ArrayList<ArrayList<Packet>>> packetFutures = new HashMap();
             try {
                 // Block until at least one channel is ready with some data to read
                 int readyChannels = selector.select(1000); // 1 second timeout
@@ -72,7 +71,7 @@ public abstract class Socketry {
                             System.err.println("Error: tunnel not found for link");
                             continue;
                         }
-                        ArrayList<CompletableFuture<ArrayList<Packet>>> packetFuturesForTunnel =
+                        ArrayList<ArrayList<Packet>> packetFuturesForTunnel =
                             packetFutures.computeIfAbsent(tunnel, k -> new ArrayList<>());
                         packetFuturesForTunnel.add(link.getPackets());
                     }
@@ -85,7 +84,7 @@ public abstract class Socketry {
             CompletableFuture.allOf(packetFutures.values().toArray(new CompletableFuture[0])).join();
             packetFutures.forEach((tunnel, tunnelPackets) -> {
                 tunnelPackets.forEach(packetFuture -> {
-                    ArrayList<Packet> packetsForTunnel = packetFuture.join();
+                    ArrayList<Packet> packetsForTunnel = packetFuture;
                     packetsForTunnel.forEach(tunnel::feedPacket);
                 });
             });

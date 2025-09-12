@@ -10,7 +10,6 @@ import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.Queue;
-import java.util.concurrent.CompletableFuture;
 
 import com.socketry.packetparser.Packet;
 
@@ -74,17 +73,15 @@ public class Link {
      *
      * @return
      */
-    public CompletableFuture<ArrayList<Packet>> getPackets() {
-        return CompletableFuture.supplyAsync(() -> {
-            try {
-                readNParsePackets();
-            } catch (IOException e) {
-                System.out.println(e.getMessage());
-                e.printStackTrace();
-                return new ArrayList<>();
-            }
-            return new ArrayList<>(packets);
-        });
+    public ArrayList<Packet> getPackets() {
+        try {
+            readNParsePackets();
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
+        return new ArrayList<>(packets);
     }
 
     /**
@@ -121,61 +118,58 @@ public class Link {
                 // expecting a `Packet`
                 int contentLength = readInt(data, currDatapos);
                 currentSocketPacket = new SocketPacket(contentLength, new ByteArrayOutputStream());
+                currDatapos += 4;
             }
             // check how much data is still to be read
             // and how much can be read
-            int to_read = Math.min(currentSocketPacket.contentLength, data.length);
+            int to_read = Math.min(currentSocketPacket.bytesLeft, data.length);
             currentSocketPacket.content.write(data, currDatapos, to_read);
-            currentSocketPacket.contentLength -= to_read;
+            currentSocketPacket.bytesLeft -= to_read;
             currDatapos += to_read;
-            if (currentSocketPacket.contentLength == 0) {
+            if (currentSocketPacket.bytesLeft == 0) {
                 packets.add(Packet.parse(currentSocketPacket.content.toByteArray()));
             }
         }
     }
 
-    public CompletableFuture<Packet> getPacket() {
-        return CompletableFuture.supplyAsync(() -> {
-            try {
-                readNParsePackets();
-            } catch (IOException e) {
-                System.out.println(e.getMessage());
-                e.printStackTrace();
-                return null;
-            }
-            return packets.poll();
-        });
+    public Packet getPacket() {
+        try {
+            readNParsePackets();
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+            e.printStackTrace();
+            return null;
+        }
+        return packets.poll();
     }
 
-    public CompletableFuture<Boolean> sendPacket(Packet packet) {
-        return CompletableFuture.supplyAsync(() -> {
-            byte[] packetData = Packet.serialize(packet).array();
+    public boolean sendPacket(Packet packet) {
+        byte[] packetData = Packet.serialize(packet).array();
 
-            ByteBuffer socketData = ByteBuffer.allocate(1024);
-            socketData.putInt(packetData.length);
-            socketData.put(packetData);
-            byte[] data = socketData.array();
+        ByteBuffer socketData = ByteBuffer.allocate(1024);
+        socketData.putInt(packetData.length);
+        socketData.put(packetData);
+        byte[] data = socketData.array();
 
-            if (clientChannel != null) {
-                try {
-                    clientChannel.write(ByteBuffer.wrap(data));
-                    return true;
-                } catch (IOException e) {
-                    System.out.println("Error while writing" + e.getMessage());
-                    e.printStackTrace();
-                }
+        if (clientChannel != null) {
+            try {
+                clientChannel.write(ByteBuffer.wrap(data));
+                return true;
+            } catch (IOException e) {
+                System.out.println("Error while writing" + e.getMessage());
+                e.printStackTrace();
             }
-            return false;
-        });
+        }
+        return false;
     }
 }
 
 class SocketPacket {
-    int contentLength;
+    int bytesLeft;
     ByteArrayOutputStream content;
 
     public SocketPacket(int contentLength, ByteArrayOutputStream content) {
-        this.contentLength = contentLength;
+        this.bytesLeft = contentLength;
         this.content = content;
     }
 }
