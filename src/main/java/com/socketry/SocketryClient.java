@@ -39,7 +39,7 @@ public class SocketryClient extends Socketry {
         for (byte socketsNum : socketsPerTunnel) {
             ArrayList<Short> portsForTunnel = new ArrayList<>();
             for (int i = lastSocketNum; i < lastSocketNum + socketsNum; i++) {
-                portsForTunnel.add((short) ports[i]);
+                portsForTunnel.add(ports[i]);
             }
             lastSocketNum += socketsNum;
             try {

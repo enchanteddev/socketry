@@ -108,13 +108,11 @@ public abstract class Socketry {
                 }
                 tunnel.sendPacket(responsePacket);
             }
-            case Packet.Ping pingPacket -> {
+            case Packet.Ping ignored -> {
                 tunnel.sendPacket(Packet.Pong.INSTANCE);
             }
-            default -> {
-                // just log for now
+            default -> // just log for now
                 System.err.println("Unhandled packet: " + packet);
-            }
         }
     }
 
