@@ -76,11 +76,11 @@ public class Link {
             // This moves the pointer inside the readBuffer
         }
         int dataRead = clientChannel.read(readBuffer);
-        System.out.println("readData : " + dataRead);
+//        System.out.println("readData : " + dataRead);
         if (dataRead == -1) {
             throw new RuntimeException("Disconnected or never connected : ");
         }
-        System.out.println("readBuffer.position() : " + readBuffer.position());
+//        System.out.println("readBuffer.position() : " + readBuffer.position());
         readBuffer.flip();
         return readBuffer.slice();
     }
@@ -117,14 +117,20 @@ public class Link {
             throw new IllegalArgumentException("Data length is less than pos");
         }
         return ((data[pos] & 0xFF) << 24) |
-                ((data[pos + 1] & 0xFF) << 16) |
-                ((data[pos + 2] & 0xFF) << 8) |
-                (data[pos + 3] & 0xFF);
+            ((data[pos + 1] & 0xFF) << 16) |
+            ((data[pos + 2] & 0xFF) << 8) |
+            (data[pos + 3] & 0xFF);
     }
 
     void readAndParseAllPackets() throws IOException {
-        while (readAndParsePackets() > 0)
-            ;
+        boolean initialState = clientChannel.isBlocking();
+        int dataRead = readAndParsePackets();
+        clientChannel.configureBlocking(false);
+
+        while (dataRead > 0) {
+            dataRead = readAndParsePackets();
+        }
+        clientChannel.configureBlocking(initialState);
     }
 
     int readAndParsePackets() throws IOException {
@@ -132,7 +138,7 @@ public class Link {
         byte[] data = new byte[buffer.remaining()];
         buffer.get(data);
 
-        System.out.println("Read " + data.length + " bytes");
+//        System.out.println("Read " + data.length + " bytes");
 
         int currDatapos = 0;
         int len = data.length;
@@ -190,8 +196,8 @@ public class Link {
         socketData.putInt(packetData.length);
         socketData.put(packetData);
         socketData.flip();
-        System.out.println("Sending " + packetData.length + " bytes");
-        System.out.println("clientChannel : " + clientChannel);
+//        System.out.println("Sending " + packetData.length + " bytes");
+//        System.out.println("clientChannel : " + clientChannel);
 
         if (clientChannel != null) {
             try {

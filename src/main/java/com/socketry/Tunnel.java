@@ -71,7 +71,7 @@ public class Tunnel {
     }
 
     private Packet feedPacket(Packet packet) {
-        System.out.println("Consuming Packet : " + packet);
+//        System.out.println("Consuming Packet : " + packet);
         switch (packet) {
             case Packet.Result resPacket -> {
                 byte[] result = resPacket.response();
@@ -133,7 +133,7 @@ public class Tunnel {
                 return new ArrayList<>();
             }
 
-            System.out.println("readyChannels : " + readyChannels);
+//            System.out.println("readyChannels : " + readyChannels);
 
             Set<SelectionKey> selectedKeys = selector.selectedKeys();
             Iterator<SelectionKey> iter = selectedKeys.iterator();
@@ -154,7 +154,7 @@ public class Tunnel {
             System.err.println("Error in selector loop: " + e.getMessage());
             e.printStackTrace();
         }
-        System.out.println("packets : " + packets);
+//        System.out.println("packets : " + packets);
         ArrayList<Packet> packetsToReturn = new ArrayList<>();
         // feed each packet received
         for (Packet packet : packets) {
@@ -180,7 +180,9 @@ public class Tunnel {
         CallIdentifier callIdentifier = new CallIdentifier(callId, fnId);
 
         CompletableFuture<byte[]> resFuture = new CompletableFuture<>();
-
+        if (fnId == 0) {
+            System.out.println(callId);
+        }
         Packet.Call packet = new Packet.Call(fnId, callId, arguments);
         packets.put(new CallIdentifier(packet.callId(), packet.fnId()), null);
         sendPacket(packet);

@@ -5,6 +5,7 @@ import com.socketry.packetparser.Packet;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -133,6 +134,7 @@ public abstract class Socketry {
             } catch (Exception e) {
                 e.printStackTrace();
             }
+            System.out.println(Arrays.toString(procedureNames));
         }
         for (byte i = 0; i < remoteProcedureNames.length; i++) {
             if (remoteProcedureNames[i].equals(name)) {

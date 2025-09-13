@@ -54,6 +54,11 @@ public class SocketTCP implements ISocket {
     }
 
     @Override
+    public boolean isBlocking() {
+        return osSocket.isBlocking();
+    }
+
+    @Override
     public SelectionKey register(Selector sel, int ops, Object att) throws ClosedChannelException {
         return osSocket.register(sel, ops, att);
     }

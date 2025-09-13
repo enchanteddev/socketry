@@ -21,6 +21,8 @@ public interface ISocket {
 
     boolean isConnected();
 
+    boolean isBlocking();
+
     SelectionKey register(Selector sel, int ops, Object att)
         throws ClosedChannelException;
 
