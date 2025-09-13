@@ -19,21 +19,12 @@ public class SocketDebug implements ISocket {
         readPipe = Pipe.open();
         writePipe = Pipe.open();
 
-        readPipe.source().configureBlocking(true);
-        readPipe.sink().configureBlocking(true);
-        writePipe.source().configureBlocking(true);
-        writePipe.sink().configureBlocking(true);
-
         connected = false;
     }
 
     @Override
     public int read(ByteBuffer dst) throws IOException {
         int r = readPipe.source().read(dst);
-        byte[] data = dst.array();
-        for (int i = 0; i < r; i++) {
-            System.out.println("Reading from other side : " + data[i]);
-        }
         return r;
     }
 
@@ -44,6 +35,10 @@ public class SocketDebug implements ISocket {
 
     @Override
     public SelectableChannel configureBlocking(boolean block) throws IOException {
+        readPipe.source().configureBlocking(block);
+        readPipe.sink().configureBlocking(block);
+        writePipe.source().configureBlocking(block);
+        writePipe.sink().configureBlocking(block);
         return readPipe.source();
     }
 

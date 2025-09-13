@@ -1,8 +1,6 @@
 package com.socketry;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 
@@ -27,10 +25,7 @@ public class LinkSanityTest {
 
         assertEquals(1, received.size());
 
-        assertTrue(received.get(0) instanceof Packet.Init);    
-        Packet.Init receivedPacket = (Packet.Init) received.get(0);
-    
-        assertArrayEquals(packet.channels(), receivedPacket.channels());
+        TestUtilities.assertPacketsEqual(packet, received.get(0));
     }
 
     @Test
@@ -50,12 +45,7 @@ public class LinkSanityTest {
 
         assertEquals(1, received.size());
 
-        assertTrue(received.get(0) instanceof Packet.Call);
-        Packet.Call receivedPacket = (Packet.Call) received.get(0);
-
-        assertEquals(fnId, receivedPacket.fnId());
-        assertEquals(callId, receivedPacket.callId());
-        assertArrayEquals(arguments, receivedPacket.arguments());
+        TestUtilities.assertPacketsEqual(packet, received.get(0));
     }
 
     @Test
@@ -72,10 +62,7 @@ public class LinkSanityTest {
 
         assertEquals(1, received.size());
 
-        assertTrue(received.get(0) instanceof Packet.Accept);
-        Packet.Accept receivedPacket = (Packet.Accept) received.get(0);
-
-        assertArrayEquals(ports, receivedPacket.ports());
+        TestUtilities.assertPacketsEqual(packet, received.get(0));
     }
 
     @Test
@@ -91,6 +78,6 @@ public class LinkSanityTest {
 
         assertEquals(1, received.size());
 
-        assertTrue(received.get(0) instanceof Packet.Ping);
+        TestUtilities.assertPacketsEqual(packet, received.get(0));
     }
 }

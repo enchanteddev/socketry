@@ -54,7 +54,8 @@ public class Link {
     /**
      * reads from the channel into the buffer
      * Puts the leftOverBuffer first then the data is read from the pipe
-     * NOTE: Does **not** mark the leftOverBuffer as null. So it is responsibility of callee to mark it null when utilized
+     * NOTE: Does **not** mark the leftOverBuffer as null. So it is responsibility
+     * of callee to mark it null when utilized
      * throws Runtime Exception if not connected
      *
      * @return
@@ -93,7 +94,7 @@ public class Link {
      */
     public ArrayList<Packet> getPackets() {
         try {
-            readNParsePackets();
+            readAndParseAllPackets();
         } catch (IOException e) {
             System.out.println(e.getMessage());
             e.printStackTrace();
@@ -113,21 +114,23 @@ public class Link {
      */
     static int readInt(byte[] data, int pos) {
         if (data.length < pos) {
-            return Integer.MIN_VALUE;
+            throw new IllegalArgumentException("Data length is less than pos");
         }
-        int res = 0;
-        int shift = 24;
-        for (int i = 0; i < 4; i++) {
-            res |= data[pos + i] << shift;
-            shift -= 8;
-        }
-        return res;
+        return ((data[pos] & 0xFF) << 24) |
+                ((data[pos + 1] & 0xFF) << 16) |
+                ((data[pos + 2] & 0xFF) << 8) |
+                (data[pos + 3] & 0xFF);
     }
 
-    public void readNParsePackets() throws IOException {
+    void readAndParseAllPackets() throws IOException {
+        while (readAndParsePackets() > 0)
+            ;
+    }
+
+    int readAndParsePackets() throws IOException {
         ByteBuffer buffer = readData();
         byte[] data = new byte[buffer.remaining()];
-        buffer.get(data); 
+        buffer.get(data);
 
         System.out.println("Read " + data.length + " bytes");
 
@@ -137,6 +140,7 @@ public class Link {
             if (currentSocketPacket == null) {
                 // expecting a `Packet`
                 int left = len - currDatapos;
+                // System.out.println("LEFT OVER : " + left);
                 if (left < 4) {
                     // got a leftover data store it for next parse.
                     leftOverBuffer = ByteBuffer.allocate(left);
@@ -145,26 +149,32 @@ public class Link {
                     break;
                 }
                 int contentLength = readInt(data, currDatapos);
+                // System.out.println("Content length : " + contentLength);
                 currentSocketPacket = new SocketPacket(contentLength, new ByteArrayOutputStream());
                 currDatapos += 4;
             }
             // check how much data is still to be read
             // and how much can be read
-            int to_read = Math.min(currentSocketPacket.bytesLeft, data.length);
+            int to_read = Math.min(currentSocketPacket.bytesLeft, data.length - currDatapos);
+            // System.out.println("to_read : " + to_read + " currDatapos : " + currDatapos +
+            // " bytesLeft : "
+            // + currentSocketPacket.bytesLeft);
             currentSocketPacket.content.write(data, currDatapos, to_read);
             currentSocketPacket.bytesLeft -= to_read;
             currDatapos += to_read;
+            // System.out.println("Bytes left : " + currentSocketPacket.bytesLeft + "
+            // currDatapos : " + currDatapos);
             if (currentSocketPacket.bytesLeft == 0) {
                 packets.add(Packet.parse(currentSocketPacket.content.toByteArray()));
                 currentSocketPacket = null;
             }
         }
-        // System.out.println("packets : " + packets);
+        return data.length;
     }
 
     public Packet getPacket() {
         try {
-            readNParsePackets();
+            readAndParseAllPackets();
         } catch (IOException e) {
             System.out.println(e.getMessage());
             e.printStackTrace();
