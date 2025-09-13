@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
 
 public class ServerSocketPipe implements IServerSocket {
     private final ServerSocketChannel osServerSocket;
