@@ -82,7 +82,6 @@ public class SocketryServer extends Socketry {
         }
 
         this.setTunnelsFromSockets(clientSockets.toArray(new SocketChannel[0]), socketsPerTunnel);
-        this.getRemoteProcedureNames();
     }
 
     public void setTunnelsFromSockets(SocketChannel[] sockets, byte[] socketsPerTunnel) {

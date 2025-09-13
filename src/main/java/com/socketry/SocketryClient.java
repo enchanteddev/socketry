@@ -30,7 +30,6 @@ public class SocketryClient extends Socketry {
         short[] ports = ((Packet.Accept) acceptPacket).ports();
 
         this.setTunnelsFromPorts(ports, socketsPerTunnel);
-        this.getRemoteProcedureNames();
     }
 
     public void setTunnelsFromPorts(short[] ports, byte[] socketsPerTunnel) {

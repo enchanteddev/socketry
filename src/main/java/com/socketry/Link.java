@@ -15,7 +15,6 @@ import com.socketry.packetparser.Packet;
 
 public class Link {
     private final SocketChannel clientChannel;
-    private final ByteBuffer buffer;
 
     private SocketPacket currentSocketPacket;
 
@@ -31,14 +30,12 @@ public class Link {
         clientChannel.configureBlocking(true); // block till connection is established
         clientChannel.connect(new InetSocketAddress(_port));
         clientChannel.configureBlocking(false);
-        buffer = ByteBuffer.allocate(1024);
         packets = new java.util.concurrent.ConcurrentLinkedQueue<>();
     }
 
     public Link(SocketChannel _connectedChannel) throws IOException {
         clientChannel = _connectedChannel;
         clientChannel.configureBlocking(false);
-        buffer = ByteBuffer.allocate(1024);
         packets = new java.util.concurrent.ConcurrentLinkedQueue<>();
     }
 
@@ -59,22 +56,21 @@ public class Link {
      *
      * @return
      */
-    private int readData() throws IOException {
+    private ByteBuffer readData() throws IOException {
         if (clientChannel == null) {
             // TODO : try to re-connect first
             throw new RuntimeException("Disconnected or never connected : ");
         }
-        byte[] leftOverData = buffer.array();
-        // only take in so that
-        ByteBuffer readBuffer = ByteBuffer.allocate(1024 - leftOverData.length);
+
+        ByteBuffer readBuffer = ByteBuffer.allocate(1024);
         int dataRead = clientChannel.read(readBuffer);
-        buffer.clear();
-        buffer.put(leftOverData);
-        if (dataRead > 0) {
-            buffer.put(readBuffer);
+        System.out.println("readData : " + dataRead);
+        if (dataRead == -1) {
+            throw new RuntimeException("Disconnected or never connected : ");
         }
-        buffer.flip();
-        return dataRead;
+        System.out.println("readBuffer.position() : " + readBuffer.position());
+        readBuffer.flip();
+        return readBuffer.slice();
     }
 
     /**
@@ -92,7 +88,9 @@ public class Link {
             e.printStackTrace();
             return new ArrayList<>();
         }
-        return new ArrayList<>(packets);
+        ArrayList<Packet> packetsToReturn = new ArrayList<>(packets);
+        packets.clear();
+        return packetsToReturn;
     }
 
     /**
@@ -116,19 +114,18 @@ public class Link {
     }
 
     public void readNParsePackets() throws IOException {
-        int dataRead = readData();
-        System.out.println("Read " + dataRead + " bytes");
-        if (dataRead <= 0) { // no data to parse
-            return;
-        }
+        ByteBuffer buffer = readData();
+        byte[] data = new byte[buffer.remaining()];
+        buffer.get(data); 
 
-        byte[] data = buffer.array();
+        System.out.println("Read " + data.length + " bytes");
+
         int currDatapos = 0;
         int len = data.length;
         while (currDatapos < len) {
             if (currentSocketPacket == null) {
                 // expecting a `Packet`
-                int contentLength = readInt(data, currDatapos);
+                int contentLength = readInt(data, currDatapos); // TODO handle if len < 4 bytes
                 currentSocketPacket = new SocketPacket(contentLength, new ByteArrayOutputStream());
                 currDatapos += 4;
             }
@@ -140,8 +137,10 @@ public class Link {
             currDatapos += to_read;
             if (currentSocketPacket.bytesLeft == 0) {
                 packets.add(Packet.parse(currentSocketPacket.content.toByteArray()));
+                currentSocketPacket = null;
             }
         }
+        // System.out.println("packets : " + packets);
     }
 
     public Packet getPacket() {
@@ -158,11 +157,12 @@ public class Link {
     public boolean sendPacket(Packet packet) {
         byte[] packetData = Packet.serialize(packet).array();
 
-        ByteBuffer socketData = ByteBuffer.allocate(1024);
+        ByteBuffer socketData = ByteBuffer.allocate(packetData.length + 4);
         socketData.putInt(packetData.length);
-        System.out.println("Sending " + packetData.length + " bytes");
         socketData.put(packetData);
         socketData.flip();
+        System.out.println("Sending " + packetData.length + " bytes");
+        System.out.println("clientChannel : " + clientChannel);
 
         if (clientChannel != null) {
             try {

@@ -7,6 +7,7 @@ import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
@@ -37,6 +38,7 @@ public class Tunnel {
     /**
      * Creates a tunnel with given number of links.
      * Also creates a selector and registers all the created links to the selector
+     * 
      * @param LinkPorts :
      * @throws IOException
      */
@@ -49,9 +51,11 @@ public class Tunnel {
             Links.add(link);
         }
     }
+
     /**
      * Creates a tunnel with given number of links.
      * Also creates a selector and registers all the created links to the selector
+     * 
      * @param sockets :
      * @throws IOException
      */
@@ -66,12 +70,14 @@ public class Tunnel {
     }
 
     private Packet feedPacket(Packet packet) {
+        System.out.println("Consuming Packet : " + packet);
         switch (packet) {
             case Packet.Result resPacket -> {
                 byte[] result = resPacket.response();
                 CallIdentifier callIdentifier = new CallIdentifier(resPacket.callId(), resPacket.fnId());
                 CompletableFuture<byte[]> resFuture = packets.get(callIdentifier);
                 if (resFuture != null) {
+                    // System.out.println("Completing Future : " + resFuture);
                     resFuture.complete(result);
                 }
                 return null;
@@ -108,6 +114,7 @@ public class Tunnel {
 
     /**
      * send the packet via any of the link of the Tunnel
+     * 
      * @param packet
      */
     public void sendPacket(Packet packet) {
@@ -125,22 +132,32 @@ public class Tunnel {
                 return new ArrayList<>();
             }
 
-            Set<SelectionKey> selectedKeys = selector.selectedKeys();
+            System.out.println("readyChannels : " + readyChannels);
 
-            for (SelectionKey key : selectedKeys) {
+            Set<SelectionKey> selectedKeys = selector.selectedKeys();
+            Iterator<SelectionKey> iter = selectedKeys.iterator();
+            while (iter.hasNext()) {
+                SelectionKey key = iter.next();
+                iter.remove(); // drain the selected-key set
+                if (!key.isValid())
+                    continue;
+
                 if (key.isReadable()) {
                     Link link = (Link) key.attachment();
                     packets.addAll(link.getPackets());
                 }
+                // System.out.println("packets : " + packets);
             }
+
         } catch (IOException e) {
             System.err.println("Error in selector loop: " + e.getMessage());
             e.printStackTrace();
         }
-
+        System.out.println("packets : " + packets);
         ArrayList<Packet> packetsToReturn = new ArrayList<>();
         // feed each packet received
         for (Packet packet : packets) {
+            // System.out.println("Feeding packet : " + packet);
             Packet feededPacket = feedPacket(packet);
             if (feededPacket != null) {
                 packetsToReturn.add(feededPacket);

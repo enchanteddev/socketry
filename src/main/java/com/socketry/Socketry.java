@@ -28,7 +28,9 @@ public abstract class Socketry {
             buffer.put((byte) 0);
         }
         buffer.flip();
-        return buffer.array();
+        byte[] result = new byte[buffer.remaining()];
+        buffer.get(result);
+        return result;
     }
 
     public void setProcedures(
@@ -126,6 +128,14 @@ public abstract class Socketry {
     }
 
     public byte getRemoteProcedureId(String name) {
+        if (remoteProcedureNames == null) {
+            System.out.println("Fetching remote procedure names...");
+            try {
+                getRemoteProcedureNames();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
         for (byte i = 0; i < remoteProcedureNames.length; i++) {
             if (remoteProcedureNames[i].equals(name)) {
                 return i;
