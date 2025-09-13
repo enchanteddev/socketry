@@ -142,7 +142,7 @@ public abstract class Socketry {
         throw new IllegalArgumentException("Unknown procedure: " + name);
     }
 
-    public CompletableFuture<byte[]> makeRemoteCall(byte fnId, byte[] data, int tunnelId) {
+    public CompletableFuture<byte[]> makeRemoteCall(byte fnId, byte[] data, int tunnelId) throws InterruptedException {
         if (tunnelId < 0 || tunnelId >= tunnels.length) {
             throw new IllegalArgumentException("Invalid channelId: " + tunnelId);
         }
