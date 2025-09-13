@@ -1,5 +1,6 @@
 package com.socketry;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -40,10 +41,7 @@ public class PacketParsingTest {
         assertTrue(parsed instanceof Packet.Init);
         Packet.Init parsedPacket = (Packet.Init) parsed;
 
-        assertEquals((parsedPacket).channels().length, randomBytes.length);
-        for (int i = 0; i < randomBytes.length; i++) {
-            assertEquals((parsedPacket).channels()[i], randomBytes[i]);
-        }
+        assertArrayEquals(randomBytes, (parsedPacket).channels());
     }
 
     @Test
@@ -57,12 +55,9 @@ public class PacketParsingTest {
         assertTrue(parsed instanceof Packet.Call);
         Packet.Call parsedPacket = (Packet.Call) parsed;
 
-        assertEquals((parsedPacket).fnId(), 1);
-        assertEquals((parsedPacket).callId(), 2);
-        assertEquals((parsedPacket).arguments().length, randomBytes.length);
-        for (int i = 0; i < randomBytes.length; i++) {
-            assertEquals((parsedPacket).arguments()[i], randomBytes[i]);
-        }
+        assertEquals(1, (parsedPacket).fnId());
+        assertEquals(2, (parsedPacket).callId());
+        assertArrayEquals(randomBytes, parsedPacket.arguments());
     }
 
     @Test
@@ -76,12 +71,9 @@ public class PacketParsingTest {
         assertTrue(parsed instanceof Packet.Result);
         Packet.Result parsedPacket = (Packet.Result) parsed;
 
-        assertEquals((parsedPacket).fnId(), 1);
-        assertEquals((parsedPacket).callId(), 2);
-        assertEquals((parsedPacket).response().length, randomBytes.length);
-        for (int i = 0; i < randomBytes.length; i++) {
-            assertEquals((parsedPacket).response()[i], randomBytes[i]);
-        }
+        assertEquals(1, (parsedPacket).fnId());
+        assertEquals(2, (parsedPacket).callId());
+        assertArrayEquals(randomBytes, (parsedPacket).response());
     }
 
     @Test
@@ -95,18 +87,15 @@ public class PacketParsingTest {
         assertTrue(parsed instanceof Packet.Error);
         Packet.Error parsedPacket = (Packet.Error) parsed;
 
-        assertEquals((parsedPacket).fnId(), 1);
-        assertEquals((parsedPacket).callId(), 2);
-        assertEquals((parsedPacket).error().length, randomBytes.length);
-        for (int i = 0; i < randomBytes.length; i++) {
-            assertEquals((parsedPacket).error()[i], randomBytes[i]);
-        }
+        assertEquals(1, (parsedPacket).fnId());
+        assertEquals(2, (parsedPacket).callId());
+        assertArrayEquals(randomBytes, (parsedPacket).error());
     }
 
     @Test
     public void sanityAccept() {
-        short[] shorts = getRandomShortsForTesting(10);
-        Packet.Accept accept = new Packet.Accept(shorts);
+        short[] randomShorts = getRandomShortsForTesting(10);
+        Packet.Accept accept = new Packet.Accept(randomShorts);
         
         byte[] data = Packet.serialize(accept).array();
         Packet parsed = Packet.parse(data);
@@ -114,10 +103,7 @@ public class PacketParsingTest {
         assertTrue(parsed instanceof Packet.Accept);
         Packet.Accept parsedPacket = (Packet.Accept) parsed;
         
-        assertEquals((parsedPacket).ports().length, shorts.length);
-        for (int i = 0; i < shorts.length; i++) {
-            assertEquals((parsedPacket).ports()[i], shorts[i]);
-        }
+        assertArrayEquals(randomShorts, (parsedPacket).ports());
     }
 
     @Test
