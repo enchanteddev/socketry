@@ -16,6 +16,7 @@ import com.socketry.socket.SocketPipe;
 
 public class Link {
     private final ISocket clientChannel;
+    private ByteBuffer leftOverBuffer;
 
     private SocketPacket currentSocketPacket;
 
@@ -52,7 +53,8 @@ public class Link {
 
     /**
      * reads from the channel into the buffer
-     * clears the buffer before read
+     * Puts the leftOverBuffer first then the data is read from the pipe
+     * NOTE: Does **not** mark the leftOverBuffer as null. So it is responsibility of callee to mark it null when utilized
      * throws Runtime Exception if not connected
      *
      * @return
@@ -63,7 +65,15 @@ public class Link {
             throw new RuntimeException("Disconnected or never connected : ");
         }
 
-        ByteBuffer readBuffer = ByteBuffer.allocate(1024);
+        int bufferLength = 1024;
+        if (leftOverBuffer != null) {
+            bufferLength = Math.max(1024, leftOverBuffer.limit() + 1024);
+        }
+        ByteBuffer readBuffer = ByteBuffer.allocate(bufferLength);
+        if (leftOverBuffer != null) {
+            readBuffer.put(leftOverBuffer);
+            // This moves the pointer inside the readBuffer
+        }
         int dataRead = clientChannel.read(readBuffer);
         System.out.println("readData : " + dataRead);
         if (dataRead == -1) {
@@ -126,7 +136,15 @@ public class Link {
         while (currDatapos < len) {
             if (currentSocketPacket == null) {
                 // expecting a `Packet`
-                int contentLength = readInt(data, currDatapos); // TODO handle if len < 4 bytes
+                int left = len - currDatapos;
+                if (left < 4) {
+                    // got a leftover data store it for next parse.
+                    leftOverBuffer = ByteBuffer.allocate(left);
+                    leftOverBuffer.put(data, currDatapos, left);
+                    leftOverBuffer.flip();
+                    break;
+                }
+                int contentLength = readInt(data, currDatapos);
                 currentSocketPacket = new SocketPacket(contentLength, new ByteArrayOutputStream());
                 currDatapos += 4;
             }

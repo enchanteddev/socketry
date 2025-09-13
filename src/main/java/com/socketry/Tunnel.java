@@ -15,16 +15,18 @@ import java.util.concurrent.CompletableFuture;
 import com.socketry.packetparser.Packet;
 import com.socketry.socket.ISocket;
 
+import static java.lang.Thread.sleep;
+
 record CallIdentifier(byte callId, byte fnId) {
     @Override
-    public final int hashCode() {
+    public int hashCode() {
         return callId << 8 | fnId;
     }
 }
 
 public class Tunnel {
+    private static final byte NO_CALL_IDS_AVAILABLE= 127;
     Map<CallIdentifier, CompletableFuture<byte[]>> packets;
-    Queue<Packet> packetQueue; // worst case scenario is number of packets in transit > 255
 
     ArrayList<Link> Links;
     Selector selector;
@@ -32,7 +34,6 @@ public class Tunnel {
     private void initialize() throws IOException {
         this.selector = Selector.open();
         this.packets = Collections.synchronizedMap(new HashMap<>());
-        this.packetQueue = new java.util.concurrent.ConcurrentLinkedQueue<>();
     }
 
     /**
@@ -104,12 +105,12 @@ public class Tunnel {
     }
 
     byte assignCallId(byte fnId) {
-        for (int i = 0; i < 255; i++) {
-            if (!packets.containsKey(new CallIdentifier((byte)i, fnId))) {
-                return (byte)i;
+        for (byte i = -127; i < 127; i++) {
+            if (!packets.containsKey(new CallIdentifier(i, fnId))) {
+                return i;
             }
         }
-        throw new IllegalStateException("No free callId available");
+        return NO_CALL_IDS_AVAILABLE;
     }
 
     /**
@@ -157,7 +158,6 @@ public class Tunnel {
         ArrayList<Packet> packetsToReturn = new ArrayList<>();
         // feed each packet received
         for (Packet packet : packets) {
-            // System.out.println("Feeding packet : " + packet);
             Packet feededPacket = feedPacket(packet);
             if (feededPacket != null) {
                 packetsToReturn.add(feededPacket);
@@ -167,9 +167,16 @@ public class Tunnel {
         return packetsToReturn;
     }
 
-    public CompletableFuture<byte[]> callFn(byte fnId, byte[] arguments) {
+    public CompletableFuture<byte[]> callFn(byte fnId, byte[] arguments) throws InterruptedException {
 
-        byte callId = assignCallId(fnId);
+        byte callId;
+        while (true) {
+            callId = assignCallId(fnId);
+            if (callId != NO_CALL_IDS_AVAILABLE) {
+                break;
+            }
+            sleep(1000);
+        }
         CallIdentifier callIdentifier = new CallIdentifier(callId, fnId);
 
         CompletableFuture<byte[]> resFuture = new CompletableFuture<>();
