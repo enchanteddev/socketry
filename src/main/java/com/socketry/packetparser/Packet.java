@@ -117,7 +117,7 @@ public sealed interface Packet permits Packet.Call, Packet.Result, Packet.Error,
             // maybe a faster 0copy method exists, but i digress.
             short[] ports = new short[(data.length - 1) / 2]; // assume length is odd (even + 1 for type byte)
             for (int i = 1; i < data.length; i += 2) {
-                ports[i / 2] = (short) ((data[i] << 8) | data[i + 1]); // BIG ENDIAN
+                ports[i / 2] = (short) (((data[i] & 0xFF) << 8) | (data[i + 1] & 0xFF)); // BIG ENDIAN
             }
             return new Accept(ports);
         }
