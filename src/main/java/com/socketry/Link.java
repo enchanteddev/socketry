@@ -12,7 +12,7 @@ import java.util.Queue;
 
 import com.socketry.packetparser.Packet;
 import com.socketry.socket.ISocket;
-import com.socketry.socket.SocketPipe;
+import com.socketry.socket.SocketTCP;
 
 public class Link {
     private final ISocket clientChannel;
@@ -27,7 +27,7 @@ public class Link {
      * @param _port server port to connect to.
      */
     public Link(int _port) throws IOException {
-        clientChannel = new SocketPipe();
+        clientChannel = new SocketTCP();
         clientChannel.configureBlocking(true); // block till connection is established
         clientChannel.connect(new InetSocketAddress(_port));
         clientChannel.configureBlocking(false);

@@ -14,25 +14,9 @@ import com.socketry.packetparser.Packet;
  * Parsing test for all packet types.
  */
 public class PacketParsingTest {
-    byte[] getRandomBytesForTesting(int length) {
-        Random random = new Random();
-        byte[] bytes = new byte[length];
-        random.nextBytes(bytes);
-        return bytes;
-    }
-
-    short[] getRandomShortsForTesting(int length) {
-        Random random = new Random();
-        short[] shorts = new short[length];
-        for (int i = 0; i < length; i++) {
-            shorts[i] = (short) random.nextInt(Short.MAX_VALUE + 1);
-        }
-        return shorts;
-    }
-
     @Test
     public void sanityInit() {
-        byte[] randomBytes = getRandomBytesForTesting(10);
+        byte[] randomBytes = TestUtilities.getRandomBytesForTesting(10);
         
         Packet.Init init = new Packet.Init(randomBytes);
         byte[] data = Packet.serialize(init).array();
@@ -46,7 +30,7 @@ public class PacketParsingTest {
 
     @Test
     public void sanityCall() {
-        byte[] randomBytes = getRandomBytesForTesting(10);
+        byte[] randomBytes = TestUtilities.getRandomBytesForTesting(10);
         
         Packet.Call call = new Packet.Call((byte) 1, (byte) 2, randomBytes);
         byte[] data = Packet.serialize(call).array();
@@ -62,7 +46,7 @@ public class PacketParsingTest {
 
     @Test
     public void sanityResult() {
-        byte[] randomBytes = getRandomBytesForTesting(10);
+        byte[] randomBytes = TestUtilities.getRandomBytesForTesting(10);
         
         Packet.Result result = new Packet.Result((byte) 1, (byte) 2, randomBytes);
         byte[] data = Packet.serialize(result).array();
@@ -78,7 +62,7 @@ public class PacketParsingTest {
 
     @Test
     public void sanityError() {
-        byte[] randomBytes = getRandomBytesForTesting(10);
+        byte[] randomBytes = TestUtilities.getRandomBytesForTesting(10);
 
         Packet.Error error = new Packet.Error((byte) 1, (byte) 2, randomBytes);
         byte[] data = Packet.serialize(error).array();
@@ -94,7 +78,7 @@ public class PacketParsingTest {
 
     @Test
     public void sanityAccept() {
-        short[] randomShorts = getRandomShortsForTesting(10);
+        short[] randomShorts = TestUtilities.getRandomShortsForTesting(10);
         Packet.Accept accept = new Packet.Accept(randomShorts);
         
         byte[] data = Packet.serialize(accept).array();

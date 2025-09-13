@@ -5,10 +5,10 @@ import java.net.SocketAddress;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.ServerSocketChannel;
 
-public class ServerSocketPipe implements IServerSocket {
+public class ServerSocketTCP implements IServerSocket {
     private final ServerSocketChannel osServerSocket;
 
-    public ServerSocketPipe() throws IOException {
+    public ServerSocketTCP() throws IOException {
         osServerSocket = ServerSocketChannel.open();
     }
 
@@ -25,6 +25,6 @@ public class ServerSocketPipe implements IServerSocket {
 
     @Override
     public ISocket accept() throws IOException {
-        return new SocketPipe(osServerSocket.accept());
+        return new SocketTCP(osServerSocket.accept());
     }
 }

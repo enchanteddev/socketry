@@ -3,7 +3,7 @@ package com.socketry;
 import com.socketry.packetparser.Packet;
 import com.socketry.socket.IServerSocket;
 import com.socketry.socket.ISocket;
-import com.socketry.socket.ServerSocketPipe;
+import com.socketry.socket.ServerSocketTCP;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -108,7 +108,7 @@ public class SocketryServer extends Socketry {
     private IServerSocket startAt(int serverPort) {
         IServerSocket serverSocketChannel;
         try {
-            serverSocketChannel = new ServerSocketPipe();
+            serverSocketChannel = new ServerSocketTCP();
             serverSocketChannel.bind(new InetSocketAddress(serverPort));
             return serverSocketChannel;
         } catch (IOException e) {

@@ -12,21 +12,7 @@ public interface ISocket {
 
     int read(ByteBuffer dst) throws IOException;
 
-    long read(ByteBuffer[] dsts, int offset, int length)
-        throws IOException;
-
-    default long read(ByteBuffer[] dsts) throws IOException {
-        return read(dsts, 0, dsts.length);
-    }
-
     int write(ByteBuffer src) throws IOException;
-
-    long write(ByteBuffer[] srcs, int offset, int length)
-        throws IOException;
-
-    default long write(ByteBuffer[] srcs) throws IOException {
-        return write(srcs, 0, srcs.length);
-    }
 
     SelectableChannel configureBlocking(boolean block)
         throws IOException;

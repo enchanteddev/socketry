@@ -9,14 +9,14 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 
-public class SocketPipe implements ISocket {
+public class SocketTCP implements ISocket {
     private final SocketChannel osSocket;
 
-    public SocketPipe() throws IOException {
+    public SocketTCP() throws IOException {
         osSocket = SocketChannel.open();
     }
 
-    public SocketPipe(SocketChannel _socketChannel) throws IOException {
+    public SocketTCP(SocketChannel _socketChannel) throws IOException {
         osSocket = _socketChannel;
     }
 
@@ -25,7 +25,6 @@ public class SocketPipe implements ISocket {
         return osSocket.read(dst);
     }
 
-    @Override
     public long read(ByteBuffer[] dsts, int offset, int length) throws IOException {
         return osSocket.read(dsts, offset, length);
     }
@@ -35,7 +34,6 @@ public class SocketPipe implements ISocket {
         return osSocket.write(src);
     }
 
-    @Override
     public long write(ByteBuffer[] srcs, int offset, int length) throws IOException {
         return osSocket.write(srcs, offset, length);
     }
