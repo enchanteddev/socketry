@@ -7,18 +7,19 @@ import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
-import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.Queue;
 
 import com.socketry.packetparser.Packet;
+import com.socketry.socket.ISocket;
+import com.socketry.socket.SocketPipe;
 
 public class Link {
-    private final SocketChannel clientChannel;
+    private final ISocket clientChannel;
 
     private SocketPacket currentSocketPacket;
 
-    private Queue<Packet> packets;
+    private final Queue<Packet> packets;
 
     /**
      * Blocks to connect to the given port
@@ -26,14 +27,14 @@ public class Link {
      * @param _port server port to connect to.
      */
     public Link(int _port) throws IOException {
-        clientChannel = SocketChannel.open();
+        clientChannel = new SocketPipe();
         clientChannel.configureBlocking(true); // block till connection is established
         clientChannel.connect(new InetSocketAddress(_port));
         clientChannel.configureBlocking(false);
         packets = new java.util.concurrent.ConcurrentLinkedQueue<>();
     }
 
-    public Link(SocketChannel _connectedChannel) throws IOException {
+    public Link(ISocket _connectedChannel) throws IOException {
         clientChannel = _connectedChannel;
         clientChannel.configureBlocking(false);
         packets = new java.util.concurrent.ConcurrentLinkedQueue<>();

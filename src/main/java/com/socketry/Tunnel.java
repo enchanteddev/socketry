@@ -3,7 +3,6 @@ package com.socketry;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
-import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -14,6 +13,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 import com.socketry.packetparser.Packet;
+import com.socketry.socket.ISocket;
 
 record CallIdentifier(byte callId, byte fnId) {
     @Override
@@ -59,10 +59,10 @@ public class Tunnel {
      * @param sockets :
      * @throws IOException
      */
-    public Tunnel(SocketChannel[] sockets) throws IOException {
+    public Tunnel(ISocket[] sockets) throws IOException {
         initialize();
         this.Links = new ArrayList<>();
-        for (SocketChannel socketChannel : sockets) {
+        for (ISocket socketChannel : sockets) {
             Link link = new Link(socketChannel);
             link.register(selector);
             Links.add(link);
@@ -104,9 +104,9 @@ public class Tunnel {
     }
 
     byte assignCallId(byte fnId) {
-        for (byte i = 0; i < 255; i++) {
-            if (!packets.containsKey(new CallIdentifier(i, fnId))) {
-                return i;
+        for (int i = 0; i < 255; i++) {
+            if (!packets.containsKey(new CallIdentifier((byte)i, fnId))) {
+                return (byte)i;
             }
         }
         throw new IllegalStateException("No free callId available");

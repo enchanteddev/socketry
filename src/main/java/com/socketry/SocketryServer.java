@@ -1,12 +1,15 @@
 package com.socketry;
 
 import com.socketry.packetparser.Packet;
+import com.socketry.socket.IServerSocket;
+import com.socketry.socket.ISocket;
+import com.socketry.socket.ServerSocketPipe;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
@@ -26,13 +29,13 @@ public class SocketryServer extends Socketry {
 
         this.setProcedures(_procedures);
         
-        ServerSocketChannel initServer = startAt(serverPort);
+        IServerSocket initServer = startAt(serverPort);
         if (initServer == null) {
             throw new IOException("Unable to start server");
         }
         initServer.configureBlocking(true);
 
-        SocketChannel clientInitChannel = initServer.accept();
+        ISocket clientInitChannel = initServer.accept();
         
         // block to complete the handshake
         Link link = new Link(clientInitChannel);
@@ -46,7 +49,7 @@ public class SocketryServer extends Socketry {
 
         byte[] socketsPerTunnel = ((Packet.Init) initPacket).channels();
 
-        ArrayList<ServerSocketChannel> serverSockets = new ArrayList<>();
+        ArrayList<IServerSocket> serverSockets = new ArrayList<>();
         ArrayList<Short> ports = new ArrayList<>();
         short current_port = LINK_PORT_START;
 
@@ -54,7 +57,7 @@ public class SocketryServer extends Socketry {
             for (short i = 0; i < socketNum; i++) {
                 while (true) {
                     current_port++;
-                    ServerSocketChannel socketChannel = startAt(current_port);
+                    IServerSocket socketChannel = startAt(current_port);
                     if (socketChannel == null) {
                         continue;
                     }
@@ -73,29 +76,27 @@ public class SocketryServer extends Socketry {
         Packet acceptPacket = new Packet.Accept(portsArray);
         link.sendPacket(acceptPacket);
 
-        ArrayList<SocketChannel> clientSockets = new ArrayList<>();
+        ArrayList<ISocket> clientSockets = new ArrayList<>();
 
-        for (ServerSocketChannel serverSocket : serverSockets) {
+        for (IServerSocket serverSocket : serverSockets) {
             serverSocket.configureBlocking(true);
-            SocketChannel clientChannel = serverSocket.accept();
+            ISocket clientChannel = serverSocket.accept();
             clientSockets.add(clientChannel);
         }
 
-        this.setTunnelsFromSockets(clientSockets.toArray(new SocketChannel[0]), socketsPerTunnel);
+        this.setTunnelsFromSockets(clientSockets.toArray(new ISocket[0]), socketsPerTunnel);
     }
 
-    public void setTunnelsFromSockets(SocketChannel[] sockets, byte[] socketsPerTunnel) {
+    public void setTunnelsFromSockets(ISocket[] sockets, byte[] socketsPerTunnel) {
         ArrayList<Tunnel> tunnels = new ArrayList<>();
 
         byte lastSocketNum = 0;
         for (byte socketsNum: socketsPerTunnel) {
-            ArrayList<SocketChannel> socketsForTunnel = new ArrayList<>();
-            for (int i = lastSocketNum; i < lastSocketNum + socketsNum; i++) {
-                socketsForTunnel.add(sockets[i]);
-            }
+            ArrayList<ISocket> socketsForTunnel =
+                new ArrayList<>(Arrays.asList(sockets).subList(lastSocketNum, lastSocketNum + socketsNum));
             lastSocketNum += socketsNum;
             try {
-                Tunnel tunnel = new Tunnel(socketsForTunnel.toArray(new SocketChannel[0]));
+                Tunnel tunnel = new Tunnel(socketsForTunnel.toArray(new ISocket[0]));
                 tunnels.add(tunnel);
             } catch (IOException e) {
                 e.printStackTrace();
@@ -105,10 +106,10 @@ public class SocketryServer extends Socketry {
         this.tunnels = tunnels.toArray(new Tunnel[0]);
     }
 
-    private ServerSocketChannel startAt(int serverPort) {
-        ServerSocketChannel serverSocketChannel = null;
+    private IServerSocket startAt(int serverPort) {
+        IServerSocket serverSocketChannel;
         try {
-            serverSocketChannel = ServerSocketChannel.open();
+            serverSocketChannel = new ServerSocketPipe();
             serverSocketChannel.bind(new InetSocketAddress(serverPort));
             return serverSocketChannel;
         } catch (IOException e) {
