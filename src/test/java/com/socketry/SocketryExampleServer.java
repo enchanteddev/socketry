@@ -20,7 +20,7 @@ public class SocketryExampleServer {
         HashMap<String, Function<byte[], byte[]>> procedures = new HashMap<>();
 
         DummyClass2 dummy = new DummyClass2();
-        procedures.put("hello", dummy::hello);
+
 
         SocketryServer server = new SocketryServer(60000, procedures);
         System.out.println("Server started");

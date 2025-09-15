@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.socketry.packetparser.Packet;
 
 public class TestUtilities {
-    static byte[] getRandomBytesForTesting(int length) {
+    public static byte[] getRandomBytesForTesting(int length) {
         Random random = new Random();
         byte[] bytes = new byte[length];
         random.nextBytes(bytes);
@@ -31,7 +31,7 @@ public class TestUtilities {
         buffer.putInt(data.length);
         buffer.put(data);
         buffer.flip();
-        System.out.println("first 4 bytes: " + buffer.array()[0] + " " + buffer.array()[1] + " " + buffer.array()[2] + " " + buffer.array()[3]);
+        // System.out.println("first 4 bytes: " + buffer.array()[0] + " " + buffer.array()[1] + " " + buffer.array()[2] + " " + buffer.array()[3]);
         return buffer;
     }
 

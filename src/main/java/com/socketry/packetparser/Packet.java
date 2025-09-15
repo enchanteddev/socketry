@@ -1,6 +1,7 @@
 package com.socketry.packetparser;
 
 import java.nio.ByteBuffer;
+import java.nio.channels.WritableByteChannel;
 import java.util.Arrays;
 
 
@@ -85,6 +86,62 @@ public sealed interface Packet permits Packet.Call, Packet.Result, Packet.Error,
                 buffer.put(PacketType.PONG);
                 break;
         }
+        return buffer;
+    }
+
+    ThreadLocal<ByteBuffer> BUFFER_CACHE = 
+        ThreadLocal.withInitial(() -> ByteBuffer.allocate(1024*1024*1024)); // 1MB
+
+    static ByteBuffer serializeFast(Packet packet) {
+        int size = switch (packet) {
+            case Packet.Call call -> 2 + call.arguments().length;
+            case Packet.Result result -> 2 + result.response().length;
+            case Packet.Error error -> 2 + error.error().length;
+            case Packet.Init init -> init.channels().length;
+            case Packet.Accept accept -> 2 * accept.ports().length;
+            case Packet.Ping ping -> 0;
+            case Packet.Pong pong -> 0;
+        };
+        ByteBuffer buffer = BUFFER_CACHE.get();
+        buffer.clear();
+        buffer.putInt(size + 1);
+        switch (packet) {
+            case Packet.Call call:
+                buffer.put(PacketType.CALL);
+                buffer.put(call.fnId());
+                buffer.put(call.callId());
+                buffer.put(call.arguments());
+                break;
+            case Packet.Result result:
+                buffer.put(PacketType.RESULT);
+                buffer.put(result.fnId());
+                buffer.put(result.callId());
+                buffer.put(result.response());
+                break;
+            case Packet.Error error:
+                buffer.put(PacketType.ERROR);
+                buffer.put(error.fnId());
+                buffer.put(error.callId());
+                buffer.put(error.error());
+                break;
+            case Packet.Init init:
+                buffer.put(PacketType.INIT);
+                buffer.put(init.channels());
+                break;
+            case Packet.Accept accept:
+                buffer.put(PacketType.ACCEPT);
+                for (short port : accept.ports()) {
+                    buffer.putShort(port); // BIG ENDIAN
+                }
+                break;
+            case Packet.Ping ping:
+                buffer.put(PacketType.PING);
+                break;
+            case Packet.Pong pong:
+                buffer.put(PacketType.PONG);
+                break;
+        }
+        buffer.flip();
         return buffer;
     }
 

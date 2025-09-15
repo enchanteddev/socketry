@@ -259,7 +259,7 @@ public class SocketryStressServer {
         double duration = (end - start) / 1_000_000.0;
         System.out.println("Server Took : "  + duration);
         System.out.println("Server Tests passed ...");
-        handler.join();
+        handler.interrupt();
     }
 }
 
