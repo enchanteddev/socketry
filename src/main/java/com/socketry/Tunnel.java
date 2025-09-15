@@ -117,7 +117,7 @@ public class Tunnel {
      * 
      * @param packet
      */
-    public void sendPacket(Packet packet) {
+    void sendPacket(Packet packet) {
         Link link = selectLink();
         link.sendPacket(packet);
     }
