@@ -40,7 +40,7 @@ class StressServerClass1 implements ISocketryStress {
 
     @Override
     public void startFunctionality(Socketry socketry, int sleepDur, int times, int tunnelId) {
-        int i = 0;
+        // int i = 0;
         System.out.println("Server Class 1 start: " + tunnelId);
         while (times -- > 0) {
             try {
@@ -123,7 +123,6 @@ class StressServerComplexFunctions implements ISocketryStress {
     }
     
     byte[] addFilterWrapper(byte[] args) {
-        ByteBuffer buffer = ByteBuffer.wrap(args);
         short[][][] a = deserializeImage(args);
 
         int lena = a.length * a[0].length * a[0][0].length * 2 + 12;

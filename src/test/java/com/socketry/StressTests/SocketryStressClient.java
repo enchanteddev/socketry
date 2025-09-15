@@ -4,15 +4,12 @@ import com.socketry.Socketry;
 import com.socketry.SocketryClient;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 
 import java.nio.ByteBuffer;
-import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 
@@ -220,7 +217,7 @@ class StressClientUI implements ISocketryStress {
     @Override
     public void startFunctionality(Socketry socketry, int sleepDur, int times, int tunnelId) {
         System.out.println("Starting Screen UI : " + tunnelId);
-        int i = 0;
+        // int i = 0;
         while (times -- > 0) {
             try {
                 // call AddMultiplied
