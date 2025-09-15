@@ -25,7 +25,7 @@ record CallIdentifier(byte callId, byte fnId) {
 }
 
 public class Tunnel {
-    private static final byte NO_CALL_IDS_AVAILABLE= 127;
+    private static final byte NO_CALL_IDS_AVAILABLE = 127;
     Map<CallIdentifier, CompletableFuture<byte[]>> packets;
 
     ArrayList<Link> Links;
@@ -39,7 +39,7 @@ public class Tunnel {
     /**
      * Creates a tunnel with given number of links.
      * Also creates a selector and registers all the created links to the selector
-     * 
+     *
      * @param LinkPorts :
      * @throws IOException
      */
@@ -56,7 +56,7 @@ public class Tunnel {
     /**
      * Creates a tunnel with given number of links.
      * Also creates a selector and registers all the created links to the selector
-     * 
+     *
      * @param sockets :
      * @throws IOException
      */
@@ -104,18 +104,39 @@ public class Tunnel {
         return Links.get(linkId);
     }
 
-    byte assignCallId(byte fnId) {
-        for (byte i = -127; i < 127; i++) {
-            if (!packets.containsKey(new CallIdentifier(i, fnId))) {
-                return i;
+    /**
+     * Creates a callIdentifier and creates an entry in packets map
+     * @param fnId
+     * @return
+     */
+    synchronized CallIdentifier getCallIdentifier(byte fnId) {
+        byte callId = NO_CALL_IDS_AVAILABLE;
+        while (true) {
+            byte i = -127;
+            for (; i < 127; i++) {
+                if (!packets.containsKey(new CallIdentifier(i, fnId))) {
+                    callId = i;
+                    break;
+                }
+            }
+            if (callId != NO_CALL_IDS_AVAILABLE) {
+                break;
+            }
+            try {
+                sleep(1000);
+            } catch (InterruptedException e) {
+                System.out.println("Error Message : " + e.getMessage());
+                e.printStackTrace();
             }
         }
-        return NO_CALL_IDS_AVAILABLE;
+        CallIdentifier callIdentifier = new CallIdentifier(callId, fnId);
+        packets.put(callIdentifier, null);
+        return callIdentifier;
     }
 
     /**
      * send the packet via any of the link of the Tunnel
-     * 
+     *
      * @param packet
      */
     public void sendPacket(Packet packet) {
@@ -140,8 +161,9 @@ public class Tunnel {
             while (iter.hasNext()) {
                 SelectionKey key = iter.next();
                 iter.remove(); // drain the selected-key set
-                if (!key.isValid())
+                if (!key.isValid()) {
                     continue;
+                }
 
                 if (key.isReadable()) {
                     Link link = (Link) key.attachment();
@@ -169,22 +191,10 @@ public class Tunnel {
 
     public CompletableFuture<byte[]> callFn(byte fnId, byte[] arguments) throws InterruptedException {
 
-        byte callId;
-        while (true) {
-            callId = assignCallId(fnId);
-            if (callId != NO_CALL_IDS_AVAILABLE) {
-                break;
-            }
-            sleep(1000);
-        }
-        CallIdentifier callIdentifier = new CallIdentifier(callId, fnId);
+        CallIdentifier callIdentifier = getCallIdentifier(fnId);
 
         CompletableFuture<byte[]> resFuture = new CompletableFuture<>();
-        if (fnId == 0) {
-            System.out.println(callId);
-        }
-        Packet.Call packet = new Packet.Call(fnId, callId, arguments);
-        packets.put(new CallIdentifier(packet.callId(), packet.fnId()), null);
+        Packet.Call packet = new Packet.Call(fnId, callIdentifier.callId(), arguments);
         sendPacket(packet);
 
         packets.put(callIdentifier, resFuture);
