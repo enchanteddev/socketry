@@ -16,8 +16,12 @@ import java.util.function.Function;
 class StressServerClass1 implements ISocketryStress {
 
     byte[] hello(byte[] args) {
-        System.out.println("Hello Called...");
         return "Hello, World!".getBytes();
+    }
+
+    byte[] time(byte[] args) {
+        long curr = System.nanoTime();
+        return ByteBuffer.allocate(8).putLong(curr).array();
     }
 
     byte[] addSerialise(int a, int b) {
@@ -38,13 +42,32 @@ class StressServerClass1 implements ISocketryStress {
         assertEquals(num1 + num2, sum);
     }
 
+    long readLong(byte[] bytes) {
+        // get the first 8 bytes without extra allocation
+        ByteBuffer buffer = ByteBuffer.wrap(bytes);
+        return buffer.getLong();
+    }
+
+    void checkTime(Socketry socketry, int tunnelId) throws InterruptedException, ExecutionException {
+        byte fnId = socketry.getRemoteProcedureId(SocketryStressFunc.CLIENT_FUNC_TIME);
+        long start = System.nanoTime();
+        byte[] endbytes = socketry.makeRemoteCall(fnId, new byte[0], tunnelId).get();
+        long finish = System.nanoTime();
+        long end = readLong(endbytes);
+        long duration = (end - start) / 1_000_000;
+        long duration2 = (finish - start) / 1_000_000;
+        System.out.println("Client --- Received time : " + duration + " ms " + "Round Trip time : " + duration2 + " ms = " + "Diff : " + (duration2 - duration)  + " ms");
+    }
+
     @Override
     public void startFunctionality(Socketry socketry, int sleepDur, int times, int tunnelId) {
         // int i = 0;
         System.out.println("Server Class 1 start: " + tunnelId);
         while (times -- > 0) {
             try {
-                assertAdd(socketry, tunnelId);
+//                assertAdd(socketry, tunnelId);
+
+                checkTime(socketry, tunnelId);
 //                System.out.println("ServerClass1 ran" + i ++);
             } catch (Exception e) {
                 System.out.println("Error : " + e.getMessage());
@@ -169,7 +192,7 @@ class StressServerComplexFunctions implements ISocketryStress {
         while (times -- > 0) {
             try {
                 assertUIUpdate(socketry, tunnelId);
-                System.out.println("ServerComplex Ran: " + i ++);
+//                System.out.println("ServerComplex Ran: " + i ++);
             } catch (Exception e) {
                 System.out.println("Error : " + e.getMessage());
                 e.printStackTrace();
@@ -186,6 +209,7 @@ public class SocketryStressServer {
 
         StressServerClass1 dummy = new StressServerClass1();
         procedures.put(SocketryStressFunc.SERVER_FUNC_HELLO, dummy::hello);
+        procedures.put(SocketryStressFunc.SERVER_FUNC_TIME, dummy::time);
 
         StressServerComplexFunctions dummy2 = new StressServerComplexFunctions();
         procedures.put(SocketryStressFunc.SERVER_ADDMULTIPLIED, dummy2::addMultipliedWrapper);
@@ -204,7 +228,7 @@ public class SocketryStressServer {
         ArrayList<ISocketryStress> stressClients = new ArrayList<>();
 
         stressClients.add(dummy);
-        stressClients.add(dummy2);
+//        stressClients.add(dummy2);
 
         int i = 0;
         ArrayList<Thread> threads = new ArrayList<>();
