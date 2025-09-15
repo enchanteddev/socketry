@@ -8,7 +8,7 @@ public class SocketryStressRunner {
 
         Thread serverThread = new Thread(() -> {
             try {
-                SocketryStressServer.start(10);
+                SocketryStressServer.start(100);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -17,7 +17,7 @@ public class SocketryStressRunner {
 
         Thread clientThread = new Thread(() -> {
             try {
-                SocketryStressClient.start(10);
+                SocketryStressClient.start(100);
             } catch (Exception e) {
                 e.printStackTrace();
             }

@@ -8,4 +8,5 @@ public class SocketryStressFunc {
     public static String SERVER_FUNC_TIME = "time";
     public static String SERVER_ADDMULTIPLIED = "addMultiplied";
     public static String SERVER_ADDFILTER = "addFilter";
+    public static String SERVER_BIGDATAEXCHANGE = "bigDataExchange";
 }

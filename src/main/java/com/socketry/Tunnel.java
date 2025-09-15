@@ -147,7 +147,7 @@ public class Tunnel {
         ArrayList<Packet> packets = new ArrayList<>();
         try {
             // Block until at least one channel is ready with some data to read
-            int readyChannels = selector.select(100); // 100 milli-second timeout
+            int readyChannels = selector.select(1); // 100 milli-second timeout
 
             if (readyChannels == 0) {
                 return new ArrayList<>();

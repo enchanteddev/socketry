@@ -48,26 +48,28 @@ class StressServerClass1 implements ISocketryStress {
         return buffer.getLong();
     }
 
-    void checkTime(Socketry socketry, int tunnelId) throws InterruptedException, ExecutionException {
+    double checkTime(Socketry socketry, int tunnelId, int i) throws InterruptedException, ExecutionException {
         byte fnId = socketry.getRemoteProcedureId(SocketryStressFunc.CLIENT_FUNC_TIME);
         long start = System.nanoTime();
         byte[] endbytes = socketry.makeRemoteCall(fnId, new byte[0], tunnelId).get();
         long finish = System.nanoTime();
         long end = readLong(endbytes);
-        long duration = (end - start) / 1_000_000;
-        long duration2 = (finish - start) / 1_000_000;
-        System.out.println("Client --- Received time : " + duration + " ms " + "Round Trip time : " + duration2 + " ms = " + "Diff : " + (duration2 - duration)  + " ms");
+        double duration = (end - start) / 1_000_000.0;
+        double duration2 = (finish - start) / 1_000_000.0;
+        return duration2;
+//        System.out.println("Server" + i + " --- Received time : " + duration + " ms " + "Round Trip time : " + duration2 + " ms = " + "Diff : " + (duration2 - duration)  + " ms");
     }
 
     @Override
     public void startFunctionality(Socketry socketry, int sleepDur, int times, int tunnelId) {
-        // int i = 0;
+         int i = 0;
+         double total = 0;
         System.out.println("Server Class 1 start: " + tunnelId);
         while (times -- > 0) {
             try {
-//                assertAdd(socketry, tunnelId);
+                // assertAdd(socketry, tunnelId);
 
-                checkTime(socketry, tunnelId);
+                total  += checkTime(socketry, tunnelId, i ++);
 //                System.out.println("ServerClass1 ran" + i ++);
             } catch (Exception e) {
                 System.out.println("Error : " + e.getMessage());
@@ -75,6 +77,7 @@ class StressServerClass1 implements ISocketryStress {
                 assert (false);
             }
         }
+        System.out.println("Server Class1 Ran: " + total + "Average time: " + (total / i)); 
     }
 }
 /**
@@ -127,6 +130,10 @@ class StressServerComplexFunctions implements ISocketryStress {
             }
         }
         return result;
+    }
+
+    byte[] bigDataExchange(byte[] args) {
+        return args;
     }
 
     short[][][] deserializeImage(byte[] image) {
@@ -214,6 +221,7 @@ public class SocketryStressServer {
         StressServerComplexFunctions dummy2 = new StressServerComplexFunctions();
         procedures.put(SocketryStressFunc.SERVER_ADDMULTIPLIED, dummy2::addMultipliedWrapper);
         procedures.put(SocketryStressFunc.SERVER_ADDFILTER, dummy2::addFilterWrapper);
+        procedures.put(SocketryStressFunc.SERVER_BIGDATAEXCHANGE, dummy2::bigDataExchange);
 
         SocketryServer server = new SocketryServer(60000, procedures);
         System.out.println("Server started");
@@ -239,6 +247,7 @@ public class SocketryStressServer {
             threads.add(thread);
         }
 
+        long start = System.nanoTime();
         threads.forEach(arg0 -> {
             try {
                 arg0.join();
@@ -246,6 +255,9 @@ public class SocketryStressServer {
                 e.printStackTrace();
             }
         });
+        long end = System.nanoTime();
+        double duration = (end - start) / 1_000_000.0;
+        System.out.println("Server Took : "  + duration);
         System.out.println("Server Tests passed ...");
         handler.join();
     }

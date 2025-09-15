@@ -42,7 +42,7 @@ class StressClientClass1 implements ISocketryStress {
         long endTime = System.nanoTime();
         long duration = endTime - startTime;
 
-        System.out.println("Execution time Hello: " + duration / 1_000_000 + " ms");
+//        System.out.println("Execution time Hello: " + duration / 1_000_000 + " ms");
         assertEquals("Hello, World!", new String(result));
     }
 
@@ -52,27 +52,29 @@ class StressClientClass1 implements ISocketryStress {
         return buffer.getLong();
     }
 
-    void checkTime(Socketry socketry, int tunnelId) throws InterruptedException, ExecutionException {
+    double checkTime(Socketry socketry, int tunnelId, int i) throws InterruptedException, ExecutionException {
         byte fnId = socketry.getRemoteProcedureId(SocketryStressFunc.SERVER_FUNC_TIME);
         long start = System.nanoTime();
         byte[] endbytes = socketry.makeRemoteCall(fnId, new byte[0], tunnelId).get();
         long finish = System.nanoTime();
         long end = readLong(endbytes);
         long duration = (end - start) / 1_000_000;
-        long duration2 = (finish - start) / 1_000_000;
-        System.out.println("Client --- Received time : " + duration + " ms " + "Round Trip time : " + duration2 + " ms = " + "Diff: " + (duration2 - duration)  + " ms");
+        double duration2 = (finish - start) / 1_000_000.0;
+        return duration2;
+//        System.out.println("Client " + i +  " --- Received time : " + duration + " ms " + "Round Trip time : " + duration2 + " ms = " + "Diff: " + (duration2 - duration)  + " ms");
     }
 
     @Override
     public void startFunctionality(Socketry socketry, int sleepDur, int times, int tunnelId) {
         System.out.println("Starting Hello " + tunnelId);
         int i = 0;
+        double total = 0;
         while (times -- > 0) {
             try {
 //                System.out.println("Waiting for hello");
-                assertHello(socketry, tunnelId);
+                // assertHello(socketry, tunnelId);
 //                System.out.println("Client Class1 Ran: " + i ++);
-                checkTime(socketry, tunnelId);
+                total += checkTime(socketry, tunnelId, i ++);
                 Thread.sleep(sleepDur);
             } catch (Exception e) {
                 System.out.println("Error : " + e.getMessage());
@@ -80,6 +82,7 @@ class StressClientClass1 implements ISocketryStress {
                 assert (false);
             }
         }
+        System.out.println("Client Class1 Ran: " + total + "Average time: " + (total / i)); 
     }
 }
 
@@ -87,6 +90,15 @@ class StressClientClass1 implements ISocketryStress {
  * Simulate complex Functions
  */
 class StressClientUI implements ISocketryStress {
+
+    public StressClientUI() {
+        bigData = new byte[1024 * 1024 * 10];
+        for (int i = 0; i < bigData.length; i++) {
+            bigData[i] = (byte) (Math.random() * 255);
+        }
+    }
+
+    byte[] bigData;
 
     byte[] updateScreenUI(short[][][] image) throws InterruptedException {
         Thread.sleep(1000);
@@ -179,6 +191,12 @@ class StressClientUI implements ISocketryStress {
         return ByteBuffer.allocate(image1.length + image2.length).put(image1).put(image2).array();
     }
 
+    void checkBigDataExchange(Socketry socketry, int tunnelId, byte[] data) throws InterruptedException, ExecutionException {
+        byte fnId = socketry.getRemoteProcedureId(SocketryStressFunc.SERVER_BIGDATAEXCHANGE);
+        byte[] result = socketry.makeRemoteCall(fnId, data, tunnelId).get();
+        assertEquals(data.length, result.length);
+    }
+
     
     void callNAssertAddMultiplied(Socketry socketry, int tunnelId, int times)
         throws InterruptedException, ExecutionException {
@@ -199,10 +217,8 @@ class StressClientUI implements ISocketryStress {
 
     void callNAssertAddFilter(Socketry socketry, int tunnelId, int times) throws InterruptedException, ExecutionException {
         byte fnId = socketry.getRemoteProcedureId(SocketryStressFunc.SERVER_ADDFILTER);
-        int num1 = 10;
-        int num2 = 10;
 
-        short[][][] a = new short[num1][num1][num1];
+        short[][][] a = new short[1920][1200][3];
         for (int i = 0; i < a.length; i++) {
             for (int j = 0; j < a[0].length; j++) {
                 for (int k = 0; k < a[0][0].length; k++) {
@@ -211,7 +227,7 @@ class StressClientUI implements ISocketryStress {
             }
         }
 
-        short[][][] b = new short[num2][num2][num2];
+        short[][][] b = new short[1920][1200][3];
         for (int i = 0; i < b.length; i++) {
             for (int j = 0; j < b[0].length; j++) {
                 for (int k = 0; k < b[0][0].length; k++) {
@@ -226,6 +242,8 @@ class StressClientUI implements ISocketryStress {
         short[][][] resext = addFilterValidator(a, b);
         assertArray(resext, result2);
     }
+
+    
 
     void assertArray(short[][][] a, short[][][] b) {
         // assert length
@@ -250,15 +268,11 @@ class StressClientUI implements ISocketryStress {
         while (times -- > 0) {
             try {
                 // call AddMultiplied
-                callNAssertAddMultiplied(socketry, tunnelId, times);
+                 callNAssertAddMultiplied(socketry, tunnelId, times);
 
-                long startTime = System.nanoTime();
-                callNAssertAddFilter(socketry, tunnelId, times);
+                 callNAssertAddFilter(socketry, tunnelId, times);
 
-                long endTime = System.nanoTime();
-                long duration = endTime - startTime;
-                System.out.println("Execution time FIlter: " + duration / 1_000_000 + " ms");
-
+//                checkBigDataExchange(socketry, tunnelId, bigData);
 //                System.out.println("Client UI Ran : " + i ++);
                 Thread.sleep(sleepDur);
             } catch (Exception e) {
@@ -301,7 +315,7 @@ public class SocketryStressClient {
             thread.start();
             threads.add(thread);
         }
-
+        long start = System.nanoTime();
         threads.forEach(arg0 -> {
             try {
                 arg0.join();
@@ -309,6 +323,9 @@ public class SocketryStressClient {
                 e.printStackTrace();
             }
         });
+        long end = System.nanoTime();
+        double duration = (end - start) / 1_000_000.0;
+        System.out.println("Client Took : "  + duration);
 
         System.out.println("Client Tests passed ...");
         handler.join();
