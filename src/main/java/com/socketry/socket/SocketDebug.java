@@ -14,6 +14,7 @@ import java.nio.channels.Selector;
 public class SocketDebug implements ISocket {
     Pipe readPipe, writePipe;
     boolean connected;
+    boolean blocking;
 
     public SocketDebug() throws IOException {
         readPipe = Pipe.open();
@@ -39,6 +40,7 @@ public class SocketDebug implements ISocket {
         readPipe.sink().configureBlocking(block);
         writePipe.source().configureBlocking(block);
         writePipe.sink().configureBlocking(block);
+        blocking = block;
         return readPipe.source();
     }
 
@@ -51,6 +53,11 @@ public class SocketDebug implements ISocket {
     @Override
     public boolean isConnected() {
         return connected;
+    }
+
+    @Override
+    public boolean isBlocking() {
+        return blocking;
     }
 
     @Override
