@@ -8,7 +8,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
@@ -139,7 +138,7 @@ public class Tunnel {
      *
      * @param packet
      */
-    public void sendPacket(Packet packet) {
+    void sendPacket(Packet packet) {
         Link link = selectLink();
         link.sendPacket(packet);
     }
