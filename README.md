@@ -1,4 +1,4 @@
-# socketry
+# Socketry
 Packet structure
 Actions (1 Byte): CALL, RESULT, ERROR, INIT, ACCEPT, PING, PONG
 
@@ -22,7 +22,9 @@ Actions (1 Byte): CALL, RESULT, ERROR, INIT, ACCEPT, PING, PONG
 ... repeated NumberOfChannels times
 
 ## Accept
-NA
+- Port numbers (2Byte per port) of each of the socket in the order of the socketsperchannel sent
+
+So if socketsperchannel is 2,3 then total (2 + 3) * 2 Bytes = 10 Bytes
 
 ## Ping
 NA
