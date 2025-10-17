@@ -328,7 +328,7 @@ public class SocketryStressClient {
         System.out.println("Client Took : "  + duration);
 
         System.out.println("Client Tests passed ...");
-        handler.join();
+        handler.interrupt();
     }
 }
 
