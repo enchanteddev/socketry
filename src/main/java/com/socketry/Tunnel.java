@@ -80,6 +80,7 @@ public class Tunnel {
                     // System.out.println("Completing Future : " + resFuture);
                     resFuture.complete(result);
                 }
+                packets.remove(callIdentifier);
                 return null;
             }
             case Packet.Error errorPacket -> {
