@@ -22,6 +22,8 @@ public class Link {
 
     private final Queue<Packet> packets;
 
+    ByteBuffer readBuffer;
+
     /**
      * Blocks to connect to the given port
      *
@@ -29,6 +31,8 @@ public class Link {
      */
     public Link(int _port) throws IOException {
         clientChannel = new SocketTCP();
+        int bufferLength = 1024*10000;
+        readBuffer = ByteBuffer.allocate(bufferLength);
         clientChannel.configureBlocking(true); // block till connection is established
         clientChannel.connect(new InetSocketAddress(_port));
         clientChannel.configureBlocking(false);
@@ -37,6 +41,8 @@ public class Link {
 
     public Link(ISocket _connectedChannel) throws IOException {
         clientChannel = _connectedChannel;
+        int bufferLength = 1024*10000;
+        readBuffer = ByteBuffer.allocate(bufferLength);
         clientChannel.configureBlocking(false);
         packets = new java.util.concurrent.ConcurrentLinkedQueue<>();
     }
@@ -66,13 +72,9 @@ public class Link {
             throw new RuntimeException("Disconnected or never connected : ");
         }
 
-        int bufferLength = 1024;
-        if (leftOverBuffer != null) {
-            bufferLength = Math.max(1024, leftOverBuffer.limit() + 1024);
-        }
-        ByteBuffer readBuffer = ByteBuffer.allocate(bufferLength);
         if (leftOverBuffer != null) {
             readBuffer.put(leftOverBuffer);
+            leftOverBuffer = null;
             // This moves the pointer inside the readBuffer
         }
         int dataRead = clientChannel.read(readBuffer);
@@ -82,7 +84,9 @@ public class Link {
         }
 //        System.out.println("readBuffer.position() : " + readBuffer.position());
         readBuffer.flip();
-        return readBuffer.slice();
+        ByteBuffer b = readBuffer.slice();
+        readBuffer.clear();
+        return b;
     }
 
     /**
@@ -201,9 +205,14 @@ public class Link {
 
         if (clientChannel != null) {
             try {
+                boolean initialState = clientChannel.isBlocking();
+                clientChannel.configureBlocking(false);
+                long curr = System.nanoTime();
                 while (socketData.hasRemaining()) {
                     clientChannel.write(socketData);
                 }
+                clientChannel.configureBlocking(initialState);
+                System.out.println("Sending in : " + (System.nanoTime() - curr) / ((double) 1e6));
 //                System.out.println("Sent " + packetData.length + " Kb");
                 return true;
             } catch (IOException e) {
