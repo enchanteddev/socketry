@@ -96,7 +96,7 @@ public class Link {
         try {
             readAndParseAllPackets();
         } catch (IOException e) {
-            System.out.println(e.getMessage());
+            System.err.println(e.getMessage());
             e.printStackTrace();
             return new ArrayList<>();
         }
@@ -201,7 +201,10 @@ public class Link {
 
         if (clientChannel != null) {
             try {
-                clientChannel.write(socketData);
+                while (socketData.hasRemaining()) {
+                    clientChannel.write(socketData);
+                }
+//                System.out.println("Sent " + packetData.length + " Kb");
                 return true;
             } catch (IOException e) {
                 System.out.println("Error while writing" + e.getMessage());

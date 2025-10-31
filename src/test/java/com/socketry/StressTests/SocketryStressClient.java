@@ -92,7 +92,7 @@ class StressClientClass1 implements ISocketryStress {
 class StressClientUI implements ISocketryStress {
 
     public StressClientUI() {
-        bigData = new byte[1024 * 1024 * 10];
+        bigData = new byte[5000 * 1024];
         for (int i = 0; i < bigData.length; i++) {
             bigData[i] = (byte) (Math.random() * 255);
         }
@@ -192,6 +192,7 @@ class StressClientUI implements ISocketryStress {
     }
 
     void checkBigDataExchange(Socketry socketry, int tunnelId, byte[] data) throws InterruptedException, ExecutionException {
+//        System.err.println("Checking Big Data Exchange of size : " + data.length);
         byte fnId = socketry.getRemoteProcedureId(SocketryStressFunc.SERVER_BIGDATAEXCHANGE);
         byte[] result = socketry.makeRemoteCall(fnId, data, tunnelId).get();
         assertEquals(data.length, result.length);
@@ -272,7 +273,7 @@ class StressClientUI implements ISocketryStress {
 
                  callNAssertAddFilter(socketry, tunnelId, times);
 
-//                checkBigDataExchange(socketry, tunnelId, bigData);
+                 checkBigDataExchange(socketry, tunnelId, bigData);
 //                System.out.println("Client UI Ran : " + i ++);
                 Thread.sleep(sleepDur);
             } catch (Exception e) {
@@ -295,7 +296,7 @@ public class SocketryStressClient {
         StressClientUI dummy2 = new StressClientUI();
         procedures.put(SocketryStressFunc.CLIENT_FUNC_UPDATE_SCREEN_UI, dummy2::updateScreenUIWrapper);
 
-        SocketryClient client = new SocketryClient(new byte[] {5, 5, 5}, 60000, procedures);
+        SocketryClient client = new SocketryClient(new byte[] {1, 1, 1}, 60000, procedures);
         System.out.println("Client started");
 
         Thread handler = new Thread(client::listenLoop);
